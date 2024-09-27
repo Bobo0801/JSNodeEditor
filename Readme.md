@@ -5,6 +5,8 @@ components:
 - Connection Lines 
   - with head (arrow, circle, ...)
   - without head
+  - add connection line 
+  - delete connection line
 
 
 Features:

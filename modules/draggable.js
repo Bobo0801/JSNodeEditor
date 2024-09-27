@@ -1,12 +1,13 @@
 import { get_style_rule_value, cursorHitTest } from "./helpers.js";
 import { Resizable } from "./basic.js";
+import { actions } from "./cursor.js";
 
 class Draggable extends Resizable {
-  #isHit;
+  isHit;
   #mouseIsDown;
   #cursorTempPos;
-  constructor(x, y, height, width, parent) {
-    super(x, y, height, width, parent);
+  constructor() {
+    super();
   }
 
   init() {
@@ -21,11 +22,24 @@ class Draggable extends Resizable {
 
   mouseUp(e) {
     this.#mouseIsDown = false;
+    this.parent.operation = undefined;    
   }
 
   mouseDown(e) {
-    this.#mouseIsDown = true;
-    this.#cursorTempPos = { x: e.x, y: e.y };
+    
+    if (this.parent.operation === undefined &&
+      this.isHit &&
+      this.topMost()
+
+    ) {
+      this.#mouseIsDown = true;
+      this.#cursorTempPos = { x: e.x, y: e.y };
+      this.parent.operation = {
+        action: actions.MOVE,
+        sourceId: this.id,
+        targetId: undefined,
+      };
+    }
   }
 
   deinit() {
@@ -35,7 +49,15 @@ class Draggable extends Resizable {
   }
 
   move(e) {
-    this.#isHit = cursorHitTest(
+    if (
+      this.parent.operation !== undefined &&
+      this.parent.operation.action !== actions.MOVE &&
+      this.parent.operation.sourceId !== this.id
+    ) {
+      return;
+    }
+
+    this.isHit = cursorHitTest(
       this.x,
       this.y,
       this.width,
@@ -44,12 +66,15 @@ class Draggable extends Resizable {
       e.y
     );
 
+    
     // drag
     if (
       // TODO: fix the issue with draging two overlaped elements
       // this.isTopMost &&
+
       this.#mouseIsDown &&
-      this.#isHit &&
+
+      
       this.#cursorTempPos !== undefined &&
       (this.#cursorTempPos.x !== e.x || this.#cursorTempPos.y !== e.y)
     ) {
@@ -67,7 +92,13 @@ class Draggable extends Resizable {
   }
 
   topMost() {
-    return Math.max(...this.parent.children.map((o) => o.zIndex));
+    const hitElements = this.parent.children.filter(
+      (o) =>
+        o.id !== this.id &&
+        o.isHit &&
+        o.zIndex > this.zIndex 
+    );
+    return hitElements.length === 0;
   }
 }
 

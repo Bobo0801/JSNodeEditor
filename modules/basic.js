@@ -1,5 +1,6 @@
 //TODO: think of generic structure that also suppots circle and other shapes
 class Basic {
+  id; // guid or unique identifier
   x;
   y;
   width;
@@ -7,12 +8,7 @@ class Basic {
   parent;
   zIndex;
   isTopMost;
-  constructor(x, y, height, width, parent) {
-    this.x = x;
-    this.y = y;
-    this.width = width;
-    this.height = height;
-    this.parent = parent;
+  constructor() {
   }
 
   init() {}

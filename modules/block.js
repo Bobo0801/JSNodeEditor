@@ -121,6 +121,8 @@ class Port {
       this.parent.parent.tempLine.end = this.parent.parent.cursorPosition;
     }
   }
+
+  makeCopy(){}
 }
 
 class Rectangle extends Draggable {
@@ -181,6 +183,22 @@ class Rectangle extends Draggable {
     const rprt = new Port(rightPort.x, rightPort.y, rightPort.r, this);
     rprt.draw();
     rprt.init();
+  }
+
+  makeCopy() {
+    // super.makeCopy(); // let this for future implementations of generic operation handling
+    const copy = new Rectangle(
+      this.x + 10,
+      this.y + 10,
+      this.height,
+      this.width,
+      this.parent,
+      this.cssClassName
+    );
+    copy.mouseIsDown = true; // TODO: this is a hack to make the copy moveable. consider refactoring it to set it in Draggable class
+    // TODO: don't forget to copy the ports
+    copy.init();
+    return copy.id;
   }
 }
 

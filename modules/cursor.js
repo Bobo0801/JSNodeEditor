@@ -3,6 +3,7 @@
 const actions= {
   MOVE: 'move',
   CONNECT: 'connect',
+  COPY: 'copy',
   // RESIZE: 'resize',
   // DELETE: 'delete',
   // ADD: 'add',

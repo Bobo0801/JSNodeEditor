@@ -21,18 +21,26 @@ class Draggable extends Resizable {
   }
 
   mouseUp(e) {
-    this.#mouseIsDown = false;
-    this.parent.operation = undefined;    
+    this.mouseIsDown = false;
+    this.parent.operation = undefined;
   }
 
   mouseDown(e) {
-    
-    if (this.parent.operation === undefined &&
+    if (e.altKey && this.isHit && this.topMost()) {
+      // copy the object
+      this.mouseDown = true;
+      this.#cursorTempPos = { x: e.x, y: e.y };
+      this.parent.operation = {
+        action: actions.COPY,
+        sourceId: this.id,
+        targetId: undefined,
+      };
+    } else if (
+      this.parent.operation === undefined &&
       this.isHit &&
       this.topMost()
-
     ) {
-      this.#mouseIsDown = true;
+      this.mouseIsDown = true;
       this.#cursorTempPos = { x: e.x, y: e.y };
       this.parent.operation = {
         action: actions.MOVE,
@@ -49,14 +57,6 @@ class Draggable extends Resizable {
   }
 
   move(e) {
-    if (
-      this.parent.operation !== undefined &&
-      this.parent.operation.action !== actions.MOVE &&
-      this.parent.operation.sourceId !== this.id
-    ) {
-      return;
-    }
-
     this.isHit = cursorHitTest(
       this.x,
       this.y,
@@ -65,22 +65,34 @@ class Draggable extends Resizable {
       e.x,
       e.y
     );
-
-    
-    // drag
     if (
-      // TODO: fix the issue with draging two overlaped elements
-      // this.isTopMost &&
-
-      this.#mouseIsDown &&
-
-      
-      this.#cursorTempPos !== undefined &&
-      (this.#cursorTempPos.x !== e.x || this.#cursorTempPos.y !== e.y)
+      this.parent.operation === undefined ||
+      (this.parent.operation !== undefined &&
+        this.parent.operation.action !== actions.MOVE &&
+        this.parent.operation.sourceId !== this.id)
     ) {
-      // TODO: calculate clear offset without removing other objects
-      // or may be clear the whole canvas is better
-      // this.parent.context.clearRect(this.x, this.y, this.width, this.height);
+      return;
+    }
+
+    if (this.parent.operation.action === actions.COPY) {
+      const newObjId = this.makeCopy();
+      // TODO: this part is duplicate from mouseDown. consider refactoring it to a function
+      this.parent.operation = {
+        action: actions.MOVE,
+        sourceId: newObjId,
+        targetId: undefined,
+      };
+      // this.mouseIsDown = true;
+      this.#cursorTempPos = { x: e.x, y: e.y };
+      //////////////////////////
+    }
+    // drag
+    else if (
+      this.mouseIsDown &&
+      this.#cursorTempPos !== undefined &&
+      (this.#cursorTempPos.x !== e.x || this.#cursorTempPos.y !== e.y) &&
+      this.parent.operation.action === actions.MOVE
+    ) {
       const dx = e.x - this.#cursorTempPos.x;
       const dy = e.y - this.#cursorTempPos.y;
       this.x += dx;
@@ -90,13 +102,12 @@ class Draggable extends Resizable {
 
     this.#cursorTempPos = { x: e.x, y: e.y };
   }
+  // should be implemented in the child class to set its own properties
+  makeCopy() {}
 
   topMost() {
     const hitElements = this.parent.children.filter(
-      (o) =>
-        o.id !== this.id &&
-        o.isHit &&
-        o.zIndex > this.zIndex 
+      (o) => o.id !== this.id && o.isHit && o.zIndex > this.zIndex
     );
     return hitElements.length === 0;
   }

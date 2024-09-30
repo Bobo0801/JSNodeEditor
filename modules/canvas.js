@@ -7,7 +7,6 @@ import { ConnectionLine } from "./line.js";
 class Canvas extends Resizable {
   canvasElem;
   context;
-  id;
   cursorPosition = {};
   children = [];
   connections = [];
@@ -15,6 +14,9 @@ class Canvas extends Resizable {
   tempLine;
   constructor(id, parent, width, height) {
     super(id, parent, width, height);
+    this.id = id;
+    this.width = width;
+    this.height = height;
     this.createDomElement(id, parent, width, height);
   }
 
@@ -54,6 +56,14 @@ class Canvas extends Resizable {
     };
   }
 
+  drawConnections() {
+    this.connections.forEach((element) => element.draw());
+  }
+
+  drawNode() {
+    this.children.forEach((element) => element.draw());
+  }
+
   render() {
     requestAnimationFrame(this.render.bind(this));
     this.context.clearRect(
@@ -63,11 +73,13 @@ class Canvas extends Resizable {
       window.innerHeight
     );
 
-    this.children.forEach((element) => element.draw());
-    this.connections.forEach((element) => element.draw());
+    this.drawNode();
+    this.drawConnections();
 
     if (this.tempLine !== undefined) {
-      // this.tempLine.draw();
+      this.tempLine.destinationNode.position = this.cursorPosition;
+      this.tempLine.draw();
+      
     }
   }
 

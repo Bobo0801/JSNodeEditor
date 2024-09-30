@@ -21,8 +21,14 @@ class Draggable extends Resizable {
   }
 
   mouseUp(e) {
-    this.#mouseIsDown = false;
-    this.parent.operation = undefined;    
+    this.mouseIsDown = false;
+    if (
+      this.parent.operation !== undefined &&
+      (this.parent.operation.action === actions.COPY ||
+        this.parent.operation.action === actions.MOVE)
+    ) {
+      this.parent.operation = undefined;
+    }
   }
 
   mouseDown(e) {

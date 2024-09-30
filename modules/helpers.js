@@ -17,7 +17,7 @@ function isIntersect(circle, point) {
   // console.log(Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2), circle.r);
   
   return (
-    Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2) <
+    Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2) <=
     circle.r
   );
 }

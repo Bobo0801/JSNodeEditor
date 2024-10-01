@@ -143,9 +143,8 @@ class Rectangle extends Draggable {
       this.cssClassName
     );
     copy.mouseIsDown = true; // TODO: this is a hack to make the copy moveable. consider refactoring it to set it in Draggable class
-    // TODO: don't forget to copy the ports
     copy.init();
-    return copy.id;
+    return copy;
   }
 }
 

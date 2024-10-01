@@ -36,6 +36,7 @@ class Operation {
     this.action = action;
     this.source = source;
     this.target = target;
+    this.state = state.PENDING;
   }
   exec() {
     if (callback === undefined) {
@@ -119,15 +120,25 @@ const cursor = {
       return;
     }
     if (this.hitObject.isMovable && !this.hitObject.isPortHit(this.position)) {
-      this.operation = new Operation(actions.MOVE, this.hitObject, "undefined");
-      this.operation.state = state.PENDING;
+      if (e.altKey) {
+        this.operation = new Operation(
+          actions.COPY,
+          this.hitObject,
+          "undefined"
+        );
+      } else {
+        this.operation = new Operation(
+          actions.MOVE,
+          this.hitObject,
+          "undefined"
+        );
+      }
     } else if (this.hitObject.isPortHit(this.position)) {
       this.operation = new Operation(
         actions.START_CONNECTION,
         this.hitObject,
         "undefined"
       );
-      this.operation.state = state.PENDING;
     }
     //----------------------------------------------
   },
@@ -142,13 +153,19 @@ const cursor = {
     switch (this.operation.action) {
       case actions.MOVE:
         if (this.isDown) {
-          const pos = { x: e.x, y: e.y };
-
-          this.hitObject.moveElement(pos, this.tempPosition);
+          const pos = { x: e.x, y: e.y };         
+          this.operation.source.moveElement(pos, this.tempPosition);
           this.tempPosition = { x: e.x, y: e.y };
         }
         break;
       case actions.COPY:
+        if (this.operation.state === state.PENDING) {
+          this.tempPosition = { x: e.x, y: e.y };
+
+          this.operation.state = state.FINISHED;
+          const copy = this.hitObject.makeCopy({ x: e.x, y: e.y });
+          this.operation = new Operation(actions.MOVE, copy, "undefined");
+        }
         break;
       case actions.START_CONNECTION:
         break;

@@ -101,7 +101,7 @@ const cursor = {
     this.isDown = true;
     this.tempPosition = { x: e.x, y: e.y };
     // set hitObject
-    setHitObject();
+    this.setHitObject();
 
     // handle operation ----------------------------------------
     if (this.hitObject === "undefined") {
@@ -134,25 +134,28 @@ const cursor = {
         this.canvas.context
       );
       this.canvas.connections.push(this.operation.load);
-
     }
 
     //----------------------------------------------
   },
-  setHitObject : function(){
-    const targetObjects = this.canvas.children.filter((element) => cursorHitTest(
-      element.x,
-      element.y,
-      element.width,
-      element.height,
-      this.position.x,
-      this.position.y
-    )
-    );
-
+  setHitObject: function () {
+    const targetObjects = this.getAllHittedObjects();
     if (targetObjects !== "undefined" && targetObjects.length > 0) {
       this.hitObject = targetObjects[targetObjects.length - 1];
     }
+  },
+
+  getAllHittedObjects: function () {
+    return this.canvas.children.filter((element) =>
+      cursorHitTest(
+        element.x,
+        element.y,
+        element.width,
+        element.height,
+        this.position.x,
+        this.position.y
+      )
+    );
   },
   mouseMove: function (e) {
     if (
@@ -198,8 +201,30 @@ const cursor = {
 
     if (this.operation !== "undefined") {
       if (this.operation.action === actions.START_CONNECTION) {
-        this.setHitObject();
-        
+        const targetObject = this.getAllHittedObjects().find((element) =>
+          element.isPortHit(this.position)
+        );
+        if (targetObject !== "undefined") {
+        const targetPort = targetObject.getHitPort(this.position);
+        console.log(this.canvas.connections);
+        if (!this.canvas.connections.some(
+          (element) =>
+          (element.start.x === this.operation.load.start.x &&
+          element.start.y === this.operation.load.start.y &&
+            element.end.x === targetPort.position.x &&
+            element.end.y === targetPort.position.y
+          ) ||
+          (element.start.x === this.operation.load.end.x &&
+            element.start.y === this.operation.load.end.y &&
+              element.end.x === targetPort.position.x &&
+              element.end.y === targetPort.position.y)
+        ) && this.operation.source.isLeft !== targetPort.isLeft) {
+          this.operation.load.end = targetPort.position;
+        }else{
+          this.canvas.connections.pop();
+        }}else{
+          this.canvas.connections.pop();
+        }
       }
       this.operation.state = state.FINISHED;
       this.load = "undefined";

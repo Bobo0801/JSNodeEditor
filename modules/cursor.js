@@ -1,4 +1,5 @@
 import { cursorHitTest } from "./helpers.js";
+import { ConnectionLine } from "./line.js";
 
 const actions = {
   IDLE: "idle",
@@ -31,6 +32,7 @@ class Operation {
   source;
   target;
   state;
+  load;
   callback = undefined;
   constructor(action, source, target) {
     this.action = action;
@@ -99,20 +101,7 @@ const cursor = {
     this.isDown = true;
     this.tempPosition = { x: e.x, y: e.y };
     // set hitObject
-    const targetObjects = this.canvas.children.filter((element) =>
-      cursorHitTest(
-        element.x,
-        element.y,
-        element.width,
-        element.height,
-        this.position.x,
-        this.position.y
-      )
-    );
-
-    if (targetObjects !== "undefined" && targetObjects.length > 0) {
-      this.hitObject = targetObjects[targetObjects.length - 1];
-    }
+    setHitObject();
 
     // handle operation ----------------------------------------
     if (this.hitObject === "undefined") {
@@ -136,11 +125,34 @@ const cursor = {
     } else if (this.hitObject.isPortHit(this.position)) {
       this.operation = new Operation(
         actions.START_CONNECTION,
-        this.hitObject,
+        this.hitObject.getHitPort(this.position),
         "undefined"
       );
+      this.operation.load = new ConnectionLine(
+        this.hitObject.getHitPort(this.position).position,
+        { x: e.x, y: e.y },
+        this.canvas.context
+      );
+      this.canvas.connections.push(this.operation.load);
+
     }
+
     //----------------------------------------------
+  },
+  setHitObject : function(){
+    const targetObjects = this.canvas.children.filter((element) => cursorHitTest(
+      element.x,
+      element.y,
+      element.width,
+      element.height,
+      this.position.x,
+      this.position.y
+    )
+    );
+
+    if (targetObjects !== "undefined" && targetObjects.length > 0) {
+      this.hitObject = targetObjects[targetObjects.length - 1];
+    }
   },
   mouseMove: function (e) {
     if (
@@ -153,7 +165,7 @@ const cursor = {
     switch (this.operation.action) {
       case actions.MOVE:
         if (this.isDown) {
-          const pos = { x: e.x, y: e.y };         
+          const pos = { x: e.x, y: e.y };
           this.operation.source.moveElement(pos, this.tempPosition);
           this.tempPosition = { x: e.x, y: e.y };
         }
@@ -168,6 +180,10 @@ const cursor = {
         }
         break;
       case actions.START_CONNECTION:
+        if (this.isDown) {
+          this.operation.load.end = { x: e.x, y: e.y };
+          this.operation.load.draw();
+        }
         break;
       case actions.EXTEND_CONNECTION:
         break;
@@ -181,7 +197,12 @@ const cursor = {
     this.isDown = false;
 
     if (this.operation !== "undefined") {
+      if (this.operation.action === actions.START_CONNECTION) {
+        this.setHitObject();
+        
+      }
       this.operation.state = state.FINISHED;
+      this.load = "undefined";
     }
     this.hitObject = "undefined";
   },

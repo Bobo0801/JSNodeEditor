@@ -132,6 +132,15 @@ class Rectangle extends Draggable {
     );
   }
 
+  getHitPort(cursorPosition) {
+    return this.ports.find((element) =>
+      isIntersect(
+        { x: element.position.x, y: element.position.y, r: element.r },
+        cursorPosition
+      )
+    );
+  }
+
   makeCopy() {
     // super.makeCopy(); // let this for future implementations of generic operation handling
     const copy = new Rectangle(

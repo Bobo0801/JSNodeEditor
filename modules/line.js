@@ -1,23 +1,22 @@
 class ConnectionLine {
   start;
   end;
-  parent;
+  context;
   constructor(start, end, parent) {
     this.start = start;
     this.end = end;
-    this.parent = parent;
+    this.context = parent;
   }
 
   init() {}
 
   draw() {
-    // console.log('HI', this.end);
-    this.drawCurve();
+    this.drawConnections();
   }
 
   drawCurve(tension = 0.5) {
-    this.parent.context.beginPath();
-    this.parent.context.moveTo(this.start.x, this.start.y);
+    this.context.beginPath();
+    this.context.moveTo(this.start.x, this.start.y);
 
     // const dx2 = this.start.x > this.end.x ? this.end.x - this.start.x : this.start.x - this.end.x
 
@@ -28,8 +27,8 @@ class ConnectionLine {
   }
 
   drawCurve_(points, tension = 0.5) {
-    this.parent.context.beginPath();
-    this.parent.context.moveTo(points[0].x, points[0].y);
+    this.context.beginPath();
+    this.context.moveTo(points[0].x, points[0].y);
 
     var t = tension != null ? tension : 1;
     for (var i = 0; i < points.length - 1; i++) {
@@ -44,9 +43,19 @@ class ConnectionLine {
       var cp2x = p2.x - ((p3.x - p1.x) / 6) * t;
       var cp2y = p2.y - ((p3.y - p1.y) / 6) * t;
 
-      this.parent.context.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
+      this.context.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, p2.x, p2.y);
     }
-    this.parent.context.stroke();
+    this.context.stroke();
+  }
+
+  drawConnections() {
+    this.context.strokeStyle = "#0B0D0FFF";
+    this.context.lineWidth = 2;
+    this.context.beginPath();
+    this.context.moveTo(this.start.x, this.start.y);
+    this.context.lineTo(this.end.x, this.end.y);
+    this.context.stroke();
+    this.context.closePath();
   }
 }
 

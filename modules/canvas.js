@@ -1,17 +1,13 @@
 import { el } from "./helpers.js";
 import { Resizable } from "./basic.js";
 import { ConnectionLine } from "./line.js";
-
-
+import { actions, cursor } from "./cursor.js";
 
 class Canvas extends Resizable {
   canvasElem;
   context;
-  id;
-  cursorPosition = {};
   children = [];
   connections = [];
-  cursorOperation;
   tempLine;
   constructor(id, parent, width, height) {
     super(id, parent, width, height);
@@ -40,18 +36,23 @@ class Canvas extends Resizable {
     divWrapper.appendChild(this.canvasElem);
 
     this.context = this.canvasElem.getContext("2d");
+    if (cursor.canvas === undefined) {
+      cursor.initCanvas(this);
+    }
+
     this.canvasElem.addEventListener(
       "mousemove",
-      this.updateCursorPosition.bind(this),
+      cursor.updateCursorPosition.bind(cursor),
       false
     );
   }
 
-  updateCursorPosition(e) {
-    this.cursorPosition = {
-      x: e.clientX - this.canvasElem.getBoundingClientRect().left,
-      y: e.clientY - this.canvasElem.getBoundingClientRect().top,
-    };
+  drawConnections() {
+    this.connections.forEach((element) => element.draw());
+  }
+
+  drawNode() {
+    this.children.forEach((element) => element.draw());
   }
 
   render() {
@@ -67,7 +68,8 @@ class Canvas extends Resizable {
     this.connections.forEach((element) => element.draw());
 
     if (this.tempLine !== undefined) {
-      // this.tempLine.draw();
+      this.tempLine.destinationNode.position = this.cursorPosition;
+      this.tempLine.draw();
     }
   }
 

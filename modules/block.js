@@ -7,10 +7,10 @@ import { Canvas } from "./canvas.js";
 import { Draggable } from "./draggable.js";
 import { Resizable } from "./basic.js";
 import { ConnectionLine } from "./line.js";
-import { actions, Operation } from "./cursor.js";
+import { actions, Operation, cursor } from "./cursor.js";
 
 // TODO: extend Resizable
-class Port {
+class Port extends Draggable {
   id;
   x;
   y;
@@ -21,39 +21,24 @@ class Port {
   connections = [];
   #mouseIsDown;
   #tempLine;
-  constructor(x, y, r, parent, id = undefined) {
-    this.x = x;
-    this.y = y;
+  constructor(position, r, parent, id = undefined) {
+    super();
+    this.position = position;
     this.r = r;
     this.parent = parent;
-    this.ctx = this.parent.parent.context;
+    this.ctx = cursor.canvas.context;
     this.id = id === undefined ? generateUuidv4() : id;
   }
 
-  init() {
-    // this.parent.context.globalCompositeOperation='destination-over';
-    this.parent.parent.canvasElem.addEventListener(
-      "mousemove",
-      this.mouseMove.bind(this)
-    );
-    this.parent.parent.canvasElem.addEventListener(
-      "mouseup",
-      this.mouseUp.bind(this)
-    );
-    this.parent.parent.canvasElem.addEventListener(
-      "mousedown",
-      this.mouseDown.bind(this)
-    );
-  }
-
-  deinit() {}
-
   draw() {
-    this.ctx.fillStyle = "black";
     this.ctx.beginPath();
-    this.ctx.arc(this.x, this.y, this.r, 0, 2 * Math.PI, true);
+    this.ctx.arc(this.position.x, this.position.y, this.r, 0, Math.PI * 2, false);
+    this.ctx.fillStyle = "#3498db";
     this.ctx.fill();
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeStyle = "#2980b9";
     this.ctx.stroke();
+    this.ctx.closePath();
 
     // draw temp line. after adding the line to canvas lines list it should be drawn from there
     if (this.#tempLine) {
@@ -66,17 +51,29 @@ class Port {
     this.#mouseIsDown = true;
 
     // start drawing line here with points start = end = cPos
+    // this.parent.parent.operationStateMachine(this.initiateNewConnectionLine);
+  }
 
+  startConnection() {
     if (
-      this.parent.parent.operation === undefined &&
       isIntersect(
         { x: this.x, y: this.y, r: this.r },
         this.parent.parent.cursorPosition
-      ) &&
-      this.parent.parent.operation === undefined
+      )
     ) {
       this.operation = new Operation(actions.CONNECT, this.id, undefined);
       // this.#tempLine = new ConnectionLine({ x: this.x, y: this.y}, {x:e.clientX,y:0}, this.parent.parent);
+      this.parent.parent.operation = new Operation(
+        actions.CONNECT,
+        this.id,
+        "undefined"
+      );
+      const tempNode = new Port(
+        cursor.position,
+        10,
+        this.parent,
+        "virtual Port"
+      );
       this.parent.parent.tempLine = new ConnectionLine(
         { x: this.x, y: this.y },
         this.parent.parent.cursorPosition,
@@ -90,23 +87,35 @@ class Port {
     // reset isHit
     this.#mouseIsDown = false;
     this.parent.parent.operation = undefined;
+    this.moveTempLine();
+  }
+
+  moveTempLine() {
     if (
-      isIntersect(
+      (isIntersect(
         { x: this.x, y: this.y, r: this.r },
         this.parent.parent.cursorPosition
       ) &&
-      this.parent.parent.operation !== undefined &&
-      this.parent.parent.operation.action === actions.CONNECT &&
-      this.parent.parent.operation.sourceId !== this.id &&
-      this.parent.parent.operation.targetId === undefined &&
-      this.parent.parent.tempLine !== undefined
+        this.parent.parent.operation !== undefined &&
+        this.parent.parent.operation.action === actions.CONNECT && {
+          x: this.position.x,
+          y: this.position.y,
+          r: this.r,
+        },
+      cursor.position &&
+        this.parent.parent.operation.sourceId !== this.id &&
+        this.parent.parent.operation.targetId === undefined &&
+        this.parent.parent.tempLine !== undefined)
     ) {
+      this.parent.parent.tempLine.destinationNode = this;
       this.parent.parent.connections.push(this.parent.parent.tempLine);
       this.parent.parent.tempLine = undefined;
 
       // reset operation to allow other operations
       this.parent.parent.operation = undefined;
     }
+
+    this.parent.parent.tempLine = undefined;
   }
 
   mouseMove(e) {
@@ -119,10 +128,20 @@ class Port {
       this.parent.parent.operation.action === actions.CONNECT
     ) {
       this.parent.parent.tempLine.end = this.parent.parent.cursorPosition;
+      this.finishConnection();
     }
   }
 
-  makeCopy(){}
+  finishConnection() {
+    if (this.#mouseIsDown && this.parent.parent.tempLine !== undefined) {
+      this.parent.parent.tempLine.destinationNode.position = cursor.position;
+    }
+  }
+
+  moveObject() {}
+  copyObject() {}
+
+  makeCopy() {}
 }
 
 class Rectangle extends Draggable {
@@ -177,12 +196,26 @@ class Rectangle extends Draggable {
       r: 10,
     };
 
-    const lprt = new Port(leftPort.x, leftPort.y, leftPort.r, this);
+    const lprt = new Port({ x: leftPort.x, y: leftPort.y }, leftPort.r, this);
     lprt.draw();
-    lprt.init();
-    const rprt = new Port(rightPort.x, rightPort.y, rightPort.r, this);
+    const rprt = new Port(
+      { x: rightPort.x, y: rightPort.y },
+      rightPort.r,
+      this
+    );
     rprt.draw();
-    rprt.init();
+
+    this.ports.push(lprt);
+    this.ports.push(rprt);
+  }
+
+  isPortHit(cursorPosition) {
+    return this.ports.some((element) =>
+      isIntersect(
+        { x: element.position.x, y: element.position.y, r: element.r },
+        cursorPosition
+      )
+    );
   }
 
   makeCopy() {

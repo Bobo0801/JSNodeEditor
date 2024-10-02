@@ -15,10 +15,10 @@ const xAngleRad = (p1, p2) =>
 
 function isIntersect(circle, point) {
   // console.log(Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2), circle.r);
-  
+  console.log(window.canvasScale)
   return (
-    Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2) <
-    circle.r
+    Math.sqrt((point.x - circle.x * window.canvasScale) ** 2 + (point.y - circle.y * window.canvasScale) ** 2) <
+    circle.r * window.canvasScale
   );
 }
 

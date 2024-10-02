@@ -196,7 +196,7 @@ const cursor = {
         break;
       case actions.START_CONNECTION:
         if (this.isDown && this.operation.load !== "undefined") {
-          this.operation.load.end = { x: e.x, y: e.y };
+          this.operation.load.end = { x: e.x / window.canvasScale, y: e.y / window.canvasScale };
           this.operation.load.draw();
         }
         break;
@@ -280,17 +280,19 @@ const cursor = {
   },
 
   getAllHittedObjects: function () {
+
     return this.canvas.children.filter((element) =>
       cursorHitTest(
-        element.x,
-        element.y,
-        element.width,
-        element.height,
+        element.x * window.canvasScale,
+        element.y * window.canvasScale,
+        element.width * window.canvasScale,
+        element.height * window.canvasScale,
         this.position.x,
         this.position.y
       )
     );
+    
+
   },
 };
-
 export { Operation, actions, cursor };

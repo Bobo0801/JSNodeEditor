@@ -56,8 +56,8 @@ class Rectangle extends Draggable {
   ports = [];
   constructor(x, y, height, width, parent, cssClassName, id = undefined) {
     super();
-    this.x = x;
-    this.y = y;
+    this.x = x ;
+    this.y = y ;
     this.height = height;
     this.width = width;
     this.parent = parent;

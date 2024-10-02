@@ -36,7 +36,7 @@ class Operation {
   // History variables
   oldPosition;
   newPosition;
-  
+
   constructor(action, source, target) {
     this.action = action;
     this.source = source;
@@ -54,18 +54,40 @@ class Operation {
   }
 }
 
-const History = {
+class MoveOperation extends Operation {
+  constructor(source, target) {
+    super(actions.MOVE, source, target);
+    this.oldPosition = { x: source.x, y: source.y };
+    this.newPosition = "undefined";
+  }
+  execute() {
+    // this.source.moveElement(this.newPosition, this.oldPosition);
+    history.execute(this);
+  }
+  undo() {
+    this.source.moveElement(this.oldPosition, this.newPosition);
+    history.undo();
+  }
+  redo() {
+    this.source.moveElement(this.newPosition, this.oldPosition);
+    history.redo();
+  }
+}
+
+const history = {
   operations: [],
   undoStack: [],
   redoStack: [],
   execute(operation) {
     this.operations.push(operation);
+    // operation.execute();
     this.undoStack.push(operation);
     this.redoStack = [];
   },
   undo() {
     if (this.undoStack.length > 0) {
       const operation = this.undoStack.pop();
+      operation.undo();
       this.redoStack.push(operation);
       return operation;
     }
@@ -74,10 +96,20 @@ const History = {
   redo() {
     if (this.redoStack.length > 0) {
       const operation = this.redoStack.pop();
+      operation.redo();
       this.undoStack.push(operation);
       return operation;
     }
     return "undefined";
+  },
+  onkeydown(e) {
+    console.log("key pressed", e);
+    
+    if (e.ctrlKey && e.key === "z") {
+      this.undo();
+    } else if (e.ctrlKey && e.key === "y") {
+      this.redo();
+    }
   },
 };
 
@@ -88,7 +120,7 @@ const cursor = {
   isDown: false,
   tempPosition: { x: 0, y: 0 },
   hitObject: "undefined",
-  updateCursorPosition(e) {
+  updateCursorPosition(e) {    
     if (this.canvas === undefined) {
       console.log("canvas not set for cursor");
       return;
@@ -99,7 +131,7 @@ const cursor = {
       e.clientY - this.canvas.canvasElem.getBoundingClientRect().top;
   },
 
-  initCanvas: function (canvas) {
+  initCanvas(canvas) {
     this.canvas = canvas;
     this.canvas.canvasElem.addEventListener(
       "mousedown",
@@ -116,6 +148,7 @@ const cursor = {
       this.mouseUp.bind(this),
       false
     );
+    this.canvas.canvasElem.addEventListener("keydown", history.onkeydown.bind(history), false);
   },
   mouseDown: function (e) {
     this.isDown = true;
@@ -127,7 +160,11 @@ const cursor = {
 
     const hitPort = this.getHitPort(this.position);
 
-    if (this.hitObject && this.hitObject.isMovable && hitPort.zIndex === -Infinity) {
+    if (
+      this.hitObject &&
+      this.hitObject.isMovable &&
+      hitPort.zIndex === -Infinity
+    ) {
       if (e.altKey) {
         this.operation = new Operation(
           actions.COPY,
@@ -135,11 +172,7 @@ const cursor = {
           "undefined"
         );
       } else {
-        this.operation = new Operation(
-          actions.MOVE,
-          this.hitObject,
-          "undefined"
-        );
+        this.operation = new MoveOperation(this.hitObject, "undefined");
       }
     } else if (hitPort && hitPort.zIndex !== -Infinity) {
       this.operation = new Operation(
@@ -163,7 +196,6 @@ const cursor = {
         const hit = this.canvas.context.isPointInPath(element.path, e.x, e.y);
         if (hit) {
           // TODO: implement delete logic here for connections
-          
         }
 
         // console.log("connection hit", hit);
@@ -182,6 +214,7 @@ const cursor = {
         if (this.isDown) {
           const pos = { x: e.x, y: e.y };
           this.operation.source.moveElement(pos, this.tempPosition);
+          this.operation.newPosition = pos;
           this.tempPosition = { x: e.x, y: e.y };
         }
         break;
@@ -196,7 +229,10 @@ const cursor = {
         break;
       case actions.START_CONNECTION:
         if (this.isDown && this.operation.load !== "undefined") {
-          this.operation.load.end = { x: e.x / window.canvasScale, y: e.y / window.canvasScale };
+          this.operation.load.end = {
+            x: e.x / window.canvasScale,
+            y: e.y / window.canvasScale,
+          };
           this.operation.load.draw();
         }
         break;
@@ -211,40 +247,54 @@ const cursor = {
   mouseUp: function (e) {
     this.isDown = false;
     if (this.operation && this.operation.state !== state.FINISHED) {
-      if (this.operation.action === actions.START_CONNECTION) {
-        const targetPort = this.getHitPort(this.position);
-        if (targetPort && targetPort.zIndex !== -Infinity) {
-          console.log("target port is =>", targetPort);
+      switch (this.operation.action) {
+        case actions.MOVE:
+        case actions.COPY:
+          this.operation.state = state.FINISHED;
+          history.execute(this.operation);
+          break;
+        case actions.START_CONNECTION:
+          const targetPort = this.getHitPort(this.position);
+          if (targetPort && targetPort.zIndex !== -Infinity) {
+            console.log("target port is =>", targetPort);
 
-          console.log(this.canvas.connections);
-          if (
-            !this.canvas.connections.some(
-              (element) =>
-                (element.start.x === this.operation.load.start.x &&
-                  element.start.y === this.operation.load.start.y &&
-                  element.end.x === targetPort.position.x &&
-                  element.end.y === targetPort.position.y) ||
-                (element.start.x === this.operation.load.end.x &&
-                  element.start.y === this.operation.load.end.y &&
-                  element.end.x === targetPort.position.x &&
-                  element.end.y === targetPort.position.y)
-            ) &&
-            this.operation.source.isLeft !== targetPort.isLeft
-          ) {
-            this.operation.load.end = targetPort.position;
+            console.log(this.canvas.connections);
+            if (
+              !this.canvas.connections.some(
+                (element) =>
+                  (element.start.x === this.operation.load.start.x &&
+                    element.start.y === this.operation.load.start.y &&
+                    element.end.x === targetPort.position.x &&
+                    element.end.y === targetPort.position.y) ||
+                  (element.start.x === this.operation.load.end.x &&
+                    element.start.y === this.operation.load.end.y &&
+                    element.end.x === targetPort.position.x &&
+                    element.end.y === targetPort.position.y)
+              ) &&
+              this.operation.source.isLeft !== targetPort.isLeft
+            ) {
+              this.operation.load.end = targetPort.position;
+            } else {
+              this.canvas.connections.pop();
+            }
           } else {
+            console.log("no target object found", this.operation);
+            console.log("connections =>", this.canvas.connections);
             this.canvas.connections.pop();
           }
-        } else {
-          console.log("no target object found", this.operation);
-          console.log("connections =>", this.canvas.connections);
-          this.canvas.connections.pop();
-        }
+
+          this.operation.state = state.FINISHED;
+          this.operation.load = "undefined";
+          break;
+        case actions.EXTEND_CONNECTION:
+          break;
+        case actions.FINISH_CONNECTION:
+          break;
+        default:
+          break;
       }
-      this.operation.state = state.FINISHED;
-      this.operation.load = "undefined";
+      this.hitObject = "undefined";
     }
-    this.hitObject = "undefined";
   },
 
   topMost: function () {
@@ -280,7 +330,6 @@ const cursor = {
   },
 
   getAllHittedObjects: function () {
-
     return this.canvas.children.filter((element) =>
       cursorHitTest(
         element.x * window.canvasScale,
@@ -291,8 +340,6 @@ const cursor = {
         this.position.y
       )
     );
-    
-
   },
 };
-export { Operation, actions, cursor };
+export { Operation, actions, cursor, history };

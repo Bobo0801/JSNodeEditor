@@ -1,7 +1,6 @@
 import { el } from "./helpers.js";
 import { Resizable } from "./basic.js";
-import { ConnectionLine } from "./line.js";
-import { actions, cursor } from "./cursor.js";
+import { cursor } from "./cursor.js";
 
 class Canvas extends Resizable {
   canvasElem;

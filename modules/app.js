@@ -12,6 +12,9 @@ const canvas = new Canvas(
   window.innerHeight 
 );
 
+canvas.canvasElem.tabIndex = 1;
+// canvas.focus(); 
+
 canvas.x = 0;
 canvas.y = 0;
 

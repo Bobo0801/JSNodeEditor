@@ -80,6 +80,9 @@ class Rectangle extends Draggable {
   }
 
   draw() {
+    this.ports.forEach((element) => {
+      element.draw();
+    });
     const bc =
       this.cssClassName != undefined
         ? get_style_rule_value(this.cssClassName, "background-color")
@@ -88,22 +91,19 @@ class Rectangle extends Draggable {
     this.parent.context.strokeRect(this.x, this.y, this.width, this.height);
     this.parent.context.fillRect(this.x, this.y, this.width, this.height);
 
-    this.ports.forEach((element) => {
-      element.draw();
-    });
   }
 
   createPorts() {
     const leftPort = {
       x: this.x,
       y: this.y + this.height / 2,
-      r: 10,
+      r: 30,
     };
 
     const rightPort = {
       x: this.x + this.width,
       y: this.y + this.height / 2,
-      r: 10,
+      r: 30,
     };
 
     const lprt = new Port(

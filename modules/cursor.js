@@ -1,4 +1,4 @@
-import { cursorHitTest } from "./helpers.js";
+import { cursorHitTest, isIntersect } from "./helpers.js";
 import { ConnectionLine } from "./line.js";
 
 const actions = {
@@ -104,11 +104,10 @@ const cursor = {
     this.setHitObject();
 
     // handle operation ----------------------------------------
-    if (this.hitObject === "undefined") {
-      console.log("hit object is undefined");
-      return;
-    }
-    if (this.hitObject.isMovable && !this.hitObject.isPortHit(this.position)) {
+
+    const hitPort = this.getHitPort(this.position);
+
+    if (this.hitObject && this.hitObject.isMovable && hitPort.zIndex === -Infinity) {
       if (e.altKey) {
         this.operation = new Operation(
           actions.COPY,
@@ -122,42 +121,35 @@ const cursor = {
           "undefined"
         );
       }
-    } else if (this.hitObject.isPortHit(this.position)) {
+    } else if (hitPort && hitPort.zIndex !== -Infinity) {
       this.operation = new Operation(
         actions.START_CONNECTION,
-        this.hitObject.getHitPort(this.position),
+        hitPort,
         "undefined"
       );
       this.operation.load = new ConnectionLine(
-        this.hitObject.getHitPort(this.position).position,
+        hitPort.position,
         { x: e.x, y: e.y },
         this.canvas.context
       );
       this.canvas.connections.push(this.operation.load);
     }
-
     //----------------------------------------------
   },
-  setHitObject: function () {
-    const targetObjects = this.getAllHittedObjects();
-    if (targetObjects !== "undefined" && targetObjects.length > 0) {
-      this.hitObject = targetObjects[targetObjects.length - 1];
-    }
-  },
-
-  getAllHittedObjects: function () {
-    return this.canvas.children.filter((element) =>
-      cursorHitTest(
-        element.x,
-        element.y,
-        element.width,
-        element.height,
-        this.position.x,
-        this.position.y
-      )
-    );
-  },
   mouseMove: function (e) {
+    if (this.canvas.connections.length > 0) {
+      this.canvas.connections.forEach((element) => {
+        // const hit = this.canvas.context.isPointInStroke(element.path, e.x, e.y);
+        const hit = this.canvas.context.isPointInPath(element.path, e.x, e.y);
+        if (hit) {
+          // TODO: implement delete logic here for connections
+          
+        }
+
+        // console.log("connection hit", hit);
+      });
+    }
+
     if (
       this.operation === undefined ||
       this.operation.state === state.FINISHED
@@ -183,7 +175,7 @@ const cursor = {
         }
         break;
       case actions.START_CONNECTION:
-        if (this.isDown) {
+        if (this.isDown && this.operation.load !== "undefined") {
           this.operation.load.end = { x: e.x, y: e.y };
           this.operation.load.draw();
         }
@@ -198,42 +190,86 @@ const cursor = {
   },
   mouseUp: function (e) {
     this.isDown = false;
-
-    if (this.operation !== "undefined") {
+    if (this.operation && this.operation.state !== state.FINISHED) {
       if (this.operation.action === actions.START_CONNECTION) {
-        const targetObject = this.getAllHittedObjects().find((element) =>
-          element.isPortHit(this.position)
-        );
-        if (targetObject !== "undefined") {
-        const targetPort = targetObject.getHitPort(this.position);
-        console.log(this.canvas.connections);
-        if (!this.canvas.connections.some(
-          (element) =>
-          (element.start.x === this.operation.load.start.x &&
-          element.start.y === this.operation.load.start.y &&
-            element.end.x === targetPort.position.x &&
-            element.end.y === targetPort.position.y
-          ) ||
-          (element.start.x === this.operation.load.end.x &&
-            element.start.y === this.operation.load.end.y &&
-              element.end.x === targetPort.position.x &&
-              element.end.y === targetPort.position.y)
-        ) && this.operation.source.isLeft !== targetPort.isLeft) {
-          this.operation.load.end = targetPort.position;
-        }else{
-          this.canvas.connections.pop();
-        }}else{
+        const targetPort = this.getHitPort(this.position);
+        if (targetPort && targetPort.zIndex !== -Infinity) {
+          console.log("target port is =>", targetPort);
+
+          console.log(this.canvas.connections);
+          if (
+            !this.canvas.connections.some(
+              (element) =>
+                (element.start.x === this.operation.load.start.x &&
+                  element.start.y === this.operation.load.start.y &&
+                  element.end.x === targetPort.position.x &&
+                  element.end.y === targetPort.position.y) ||
+                (element.start.x === this.operation.load.end.x &&
+                  element.start.y === this.operation.load.end.y &&
+                  element.end.x === targetPort.position.x &&
+                  element.end.y === targetPort.position.y)
+            ) &&
+            this.operation.source.isLeft !== targetPort.isLeft
+          ) {
+            this.operation.load.end = targetPort.position;
+          } else {
+            this.canvas.connections.pop();
+          }
+        } else {
+          console.log("no target object found", this.operation);
+          console.log("connections =>", this.canvas.connections);
           this.canvas.connections.pop();
         }
       }
       this.operation.state = state.FINISHED;
-      this.load = "undefined";
+      this.operation.load = "undefined";
     }
     this.hitObject = "undefined";
   },
 
   topMost: function () {
     return this.hitObjects[this.hitObjects.length - 1]; // TODO: check if this is correct
+  },
+  getAllPorts: function () {
+    return [...this.canvas.children.map((element) => element.ports)].reduce(
+      function (prev, curr) {
+        return prev.concat(curr);
+      }
+    );
+  },
+  getHitPort: function (position) {
+    return this.getAllPorts()
+      .filter((element) =>
+        isIntersect(
+          { x: element.position.x, y: element.position.y, r: element.r },
+          this.position
+        )
+      )
+      .reduce(
+        function (prev, curr) {
+          return prev.zIndex > curr.zIndex ? prev : curr;
+        },
+        { zIndex: -Infinity }
+      );
+  },
+  setHitObject: function () {
+    const targetObjects = this.getAllHittedObjects();
+    if (targetObjects !== "undefined" && targetObjects.length > 0) {
+      this.hitObject = targetObjects[targetObjects.length - 1];
+    }
+  },
+
+  getAllHittedObjects: function () {
+    return this.canvas.children.filter((element) =>
+      cursorHitTest(
+        element.x,
+        element.y,
+        element.width,
+        element.height,
+        this.position.x,
+        this.position.y
+      )
+    );
   },
 };
 

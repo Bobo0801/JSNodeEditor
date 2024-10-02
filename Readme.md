@@ -1,3 +1,4 @@
+# JSNodeEditor
 components:
 - Canvas
 - Toolbox
@@ -25,5 +26,3 @@ Libs & Tools
 - Nodejs
 
 Implementation:
-# JSNodeEditor
-Test

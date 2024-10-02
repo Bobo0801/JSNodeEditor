@@ -2,10 +2,12 @@ class ConnectionLine {
   start;
   end;
   context;
+  path;
   constructor(start, end, parent) {
     this.start = start;
     this.end = end;
     this.context = parent;
+    this.path = new Path2D();
   }
 
   init() {}
@@ -15,9 +17,11 @@ class ConnectionLine {
   }
 
   drawCurve() {
-    this.context.beginPath();
-    this.context.moveTo(this.start.x, this.start.y);
-    this.context.bezierCurveTo(
+    this.path = new Path2D();
+    this.context.strokeStyle = "#1C2D3EFF";
+    this.context.lineWidth = 10;
+    this.path.moveTo(this.start.x, this.start.y);
+    this.path.bezierCurveTo(
       this.CalculateControlPonPoint1().x,
       this.CalculateControlPonPoint1().y,
       this.CalculateControlPonPoint2().x,
@@ -25,7 +29,9 @@ class ConnectionLine {
       this.end.x,
       this.end.y
     );
-    this.context.stroke();
+    this.context.stroke(this.path);
+    this.context.strokeStyle = "#000000FF";
+    this.context.lineWidth = 2;
   }
 
   CalculateControlPonPoint1() {
@@ -44,16 +50,6 @@ class ConnectionLine {
         : this.end.x + this.end.x * 0.15;
     const y = this.end.y;
     return { x: x, y: y };
-  }
-
-  drawConnections() {
-    this.context.strokeStyle = "#0B0D0FFF";
-    this.context.lineWidth = 2;
-    this.context.beginPath();
-    this.context.moveTo(this.start.x, this.start.y);
-    this.context.lineTo(this.end.x, this.end.y);
-    this.context.stroke();
-    this.context.closePath();
   }
 }
 

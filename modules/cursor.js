@@ -33,33 +33,53 @@ class Operation {
   target;
   state;
   load;
-  callback = undefined;
+  // History variables
+  oldPosition;
+  newPosition;
+  
   constructor(action, source, target) {
     this.action = action;
     this.source = source;
     this.target = target;
     this.state = state.PENDING;
   }
-  exec() {
-    if (callback === undefined) {
-      console.log(
-        "callback not implemented for this operation",
-        this.action,
-        this.source,
-        this.target
-      );
-      return;
-    }
-    if (callback() === true) {
-      this.state = state.FINISHED;
-      return result.SUCCESS;
-    } else {
-      this.state = state.FINISHED;
-      console.log("operation failed", this.action, this.source, this.target);
-      return result.FAILURE;
-    }
+  mouseDown() {
+    console.log("mouse down");
+  }
+  mouseMove() {
+    console.log("mouse move");
+  }
+  mouseUp() {
+    console.log("mouse up");
   }
 }
+
+const History = {
+  operations: [],
+  undoStack: [],
+  redoStack: [],
+  execute(operation) {
+    this.operations.push(operation);
+    this.undoStack.push(operation);
+    this.redoStack = [];
+  },
+  undo() {
+    if (this.undoStack.length > 0) {
+      const operation = this.undoStack.pop();
+      this.redoStack.push(operation);
+      return operation;
+    }
+    return "undefined";
+  },
+  redo() {
+    if (this.redoStack.length > 0) {
+      const operation = this.redoStack.pop();
+      this.undoStack.push(operation);
+      return operation;
+    }
+    return "undefined";
+  },
+};
 
 const cursor = {
   position: { x: 0, y: 0 },

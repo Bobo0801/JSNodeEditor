@@ -14,11 +14,9 @@ const xAngleRad = (p1, p2) =>
   Math.round(Math.atan(yDistance(p1.y, p2.y), xDistance(p1.x, p2.x)));
 
 function isIntersect(circle, point) {
-  // console.log(Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2), circle.r);
-  console.log(window.canvasScale)
   return (
-    Math.sqrt((point.x - circle.x * window.canvasScale) ** 2 + (point.y - circle.y * window.canvasScale) ** 2) <
-    circle.r * window.canvasScale
+    Math.sqrt((point.x - circle.x) ** 2 + (point.y - circle.y) ** 2) <
+    circle.r
   );
 }
 
@@ -27,7 +25,6 @@ function collisionCircleCircle(c1, c2) {
   let dx = c2.x - c1.x;
   let dy = c2.y - c1.y;
   let rSum = c1.r + c2.r;
-  console.log(`dx * dx + dy * dy = ${dx * dx + dy * dy }, rSum = ${rSum * rSum}`);
   
   return dx * dx + dy * dy <= rSum * rSum;
 }

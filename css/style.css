@@ -6,3 +6,22 @@
 .block {
   background-color: antiquewhite;
 }
+
+#editorContainer {
+  display: flex;
+  flex-direction: row;
+  background-color: beige;
+  display: inline-block;
+  width: 300px;
+}
+
+#leftPanel{
+  width: 100px;
+  background-color: azure;
+}
+
+#editorBody {
+  width: 20%;
+  background-color: beige;
+  display: inline-block;
+}

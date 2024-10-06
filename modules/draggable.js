@@ -10,13 +10,20 @@ class Draggable extends Resizable {
   }
 
   moveElement(newCursorPosition, oldCursorPosition) {
+    
     const dx = newCursorPosition.x - oldCursorPosition.x;
     const dy = newCursorPosition.y - oldCursorPosition.y;
-    this.x += dx / window.canvasScale;
-    this.y += dy / window.canvasScale;
+    this.x += (dx );
+    this.y += (dy );
     
   
 
+    this.draw();
+  }
+
+  moveT_o(x, y) {
+    this.x = x;
+    this.y = y;
     this.draw();
   }
 }

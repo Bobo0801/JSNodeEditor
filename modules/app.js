@@ -15,10 +15,8 @@ const canvas = new Canvas(
 canvas.canvasElem.tabIndex = 1;
 // canvas.focus(); 
 
-canvas.x = 0;
-canvas.y = 0;
 
-const rect = new Rectangle(150, 150, 150, 300, canvas, ".block");
+const rect = new Rectangle(150, 150, 50, 100, canvas, ".block");
 rect.init();
 // // rect.draw();
 

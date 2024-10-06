@@ -3,6 +3,8 @@ import { Resizable } from "./basic.js";
 import { cursor } from "./cursor.js";
 
 class Canvas extends Resizable {
+  x;
+  y;
   canvasElem;
   context;
   children = [];
@@ -27,14 +29,16 @@ class Canvas extends Resizable {
    */
   createDomElement(id, parent, width, height) {
     // create div to wrap the canvas
-    const divWrapper = document.createElement("div");
-    divWrapper.id = id;
+    const divWrapper = el("#editorContainer");
+    // divWrapper.id = id;
     parent.appendChild(divWrapper);
 
     // create canvas element and add it to the wrapper div
     this.canvasElem = document.createElement("canvas");
     this.canvasElem.width = width;
     this.canvasElem.height = height;
+    divWrapper.x = this.x;
+    divWrapper.y = this.y;
     this.canvasElem.className = "drawingCanvas";
 
     divWrapper.appendChild(this.canvasElem);
@@ -43,18 +47,6 @@ class Canvas extends Resizable {
     if (cursor.canvas === undefined) {
       cursor.initCanvas(this);
     }
-
-    this.canvasElem.addEventListener(
-      "mousemove",
-      cursor.updateCursorPosition.bind(cursor),
-      false
-    );
-
-    this.canvasElem.addEventListener(
-      "mousewheel",
-      this.onmousewheel.bind(this),
-      false
-    );
   }
 
   drawConnections() {
@@ -65,53 +57,20 @@ class Canvas extends Resizable {
     this.children.forEach((element) => element.draw());
   }
 
-  onmousewheel(event) {
-    var mousex = event.clientX - this.canvasElem.offsetLeft;
-    var mousey = event.clientY - this.canvasElem.offsetTop;
-    var wheel = event.wheelDelta / 120; //n or -n
-
-    //according to Chris comment
-    var zoom = Math.pow(1 + Math.abs(wheel) / 2, wheel > 0 ? 1 : -1);
-
-    this.context.translate(this.x, this.y);
-    this.context.scale(zoom, zoom);
-    this.context.translate(
-      -(
-        mousex / window.canvasScale +
-        this.originx -
-        mousex / (window.canvasScale * zoom)
-      ),
-      -(
-        mousey / window.canvasScale +
-        this.originy -
-        mousey / (window.canvasScale * zoom)
-      )
-    );
-
-    this.originx =
-      mousex / window.canvasScale +
-      this.originx -
-      mousex / (window.canvasScale * zoom);
-    this.originy =
-      mousey / window.canvasScale +
-      this.originy -
-      mousey / (window.canvasScale * zoom);
-    window.canvasScale *= zoom;
-    console.log(window.canvasScale)
-  }
+ 
 
   render() {
     requestAnimationFrame(this.render.bind(this));
     // this.context.setTransform()
     this.context.clearRect(
-      this.x,
-      this.y,
-      window.innerWidth / window.canvasScale,
-      window.innerHeight / window.canvasScale
+      0,
+      0,
+      this.canvasElem.width / window.canvasScale,
+      this.canvasElem.height  / window.canvasScale
     );
 
-    this.children.forEach((element) => element.draw());
     this.connections.forEach((element) => element.draw());
+    this.children.forEach((element) => element.draw());
 
     if (this.tempLine !== undefined) {
       this.tempLine.destinationNode.position = this.cursorPosition;

@@ -19,7 +19,7 @@ class ConnectionLine {
   drawCurve() {
     this.path = new Path2D();
     this.context.strokeStyle = "#1C2D3EFF";
-    this.context.lineWidth = 10;
+    this.context.lineWidth = 4;
     this.path.moveTo(this.start.x, this.start.y);
     this.path.bezierCurveTo(
       this.CalculateControlPonPoint1().x,

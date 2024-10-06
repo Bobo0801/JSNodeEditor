@@ -34,23 +34,31 @@ class Operation {
   state;
   load;
   // History variables
-  oldPosition;
-  newPosition;
-
+  #oldPosition;
+  #newPosition;
+  logNewPosition = [];
+  logOldPosition = [];
   constructor(action, source, target) {
     this.action = action;
     this.source = source;
     this.target = target;
     this.state = state.PENDING;
   }
-  mouseDown() {
-    console.log("mouse down");
+
+  set oldPosition(pos) {
+    this.#oldPosition = pos;
+    this.logOldPosition.push(pos);
   }
-  mouseMove() {
-    console.log("mouse move");
+  get oldPosition() {
+    return this.#oldPosition;
   }
-  mouseUp() {
-    console.log("mouse up");
+
+  set newPosition(pos) {
+    this.#newPosition = pos;
+    this.logNewPosition.push(pos);
+  }
+  get newPosition() {
+    return this.#newPosition;
   }
 }
 
@@ -61,16 +69,48 @@ class MoveOperation extends Operation {
     this.newPosition = "undefined";
   }
   execute() {
-    // this.source.moveElement(this.newPosition, this.oldPosition);
+    this.newPosition = { x: this.source.x, y: this.source.y };
     history.execute(this);
   }
   undo() {
     this.source.moveElement(this.oldPosition, this.newPosition);
-    history.undo();
   }
   redo() {
     this.source.moveElement(this.newPosition, this.oldPosition);
-    history.redo();
+  }
+}
+
+class CopyOperation extends Operation {
+  constructor(source, target) {
+    super(actions.COPY, source, target);
+    this.oldPosition = { x: source.x, y: source.y };
+    this.newPosition = "undefined";
+  }
+  execute() {
+    const copy = cursor.canvas.children.pop();
+    history.execute(this);
+  }
+  undo() {
+    cursor.canvas.children.pop();
+  }
+  redo() {
+    cursor.canvas.children.push(this.source);
+  }
+}
+
+class ConnectionOperation extends Operation {
+  constructor(source, target) {
+    super(actions.START_CONNECTION, source, target);
+    this.load = "undefined";
+  }
+  execute() {
+    history.execute(structuredClone(this));
+  }
+  undo() {
+    cursor.canvas.connections.pop();
+  }
+  redo() {
+    cursor.canvas.connections.push(this.load);
   }
 }
 
@@ -103,8 +143,6 @@ const history = {
     return "undefined";
   },
   onkeydown(e) {
-    console.log("key pressed", e);
-    
     if (e.ctrlKey && e.key === "z") {
       this.undo();
     } else if (e.ctrlKey && e.key === "y") {
@@ -120,15 +158,25 @@ const cursor = {
   isDown: false,
   tempPosition: { x: 0, y: 0 },
   hitObject: "undefined",
-  updateCursorPosition(e) {    
+
+  scaleFactor: 1.0,
+  offsetX: 0,
+  offsetY: 0,
+  originx: 0,
+  originy: 0,
+
+  getCursorPostionInCanvas(e) {
+    return {
+      x: (e.clientX - this.canvas.canvasElem.getBoundingClientRect().left - 1) / window.canvasScale,
+      y: (e.clientY - this.canvas.canvasElem.getBoundingClientRect().top - 1) / window.canvasScale,
+    }
+  },
+
+  updateCursorPosition(e) {
     if (this.canvas === undefined) {
-      console.log("canvas not set for cursor");
       return;
     }
-    this.position.x =
-      e.clientX - this.canvas.canvasElem.getBoundingClientRect().left;
-    this.position.y =
-      e.clientY - this.canvas.canvasElem.getBoundingClientRect().top;
+    this.position = this.getCursorPostionInCanvas(e);
   },
 
   initCanvas(canvas) {
@@ -148,44 +196,59 @@ const cursor = {
       this.mouseUp.bind(this),
       false
     );
-    this.canvas.canvasElem.addEventListener("keydown", history.onkeydown.bind(history), false);
+    this.canvas.canvasElem.addEventListener(
+      "keydown",
+      history.onkeydown.bind(history),
+      false
+    );
+
+    this.canvas.canvasElem.addEventListener(
+      "mousemove",
+      this.updateCursorPosition.bind(this),
+      false
+    );
+
+    this.canvas.canvasElem.addEventListener(
+      "mousewheel",
+      this.onmousewheel.bind(this),
+      false
+    );
   },
   mouseDown: function (e) {
     this.isDown = true;
-    this.tempPosition = { x: e.x, y: e.y };
+    this.tempPosition =  this.getCursorPostionInCanvas(e);
+    
     // set hitObject
-    this.setHitObject();
-
-    // handle operation ----------------------------------------
-
     const hitPort = this.getHitPort(this.position);
-
-    if (
-      this.hitObject &&
-      this.hitObject.isMovable &&
-      hitPort.zIndex === -Infinity
-    ) {
-      if (e.altKey) {
-        this.operation = new Operation(
-          actions.COPY,
-          this.hitObject,
-          "undefined"
+    if (this.setHitObject() || hitPort) {
+      
+      
+      // handle operation ----------------------------------------
+      
+      
+      if (
+        this.hitObject &&
+        this.hitObject.isMovable &&
+        hitPort.zIndex === -Infinity
+      ) {
+        if (e.altKey) {
+          this.operation = new CopyOperation(
+            this.hitObject,
+            "undefined"
+          );
+        } else {
+          this.operation = new MoveOperation(this.hitObject, "undefined");
+          // this.operation.oldPosition = this.tempPosition;
+        }
+      } else if (hitPort && hitPort.zIndex !== -Infinity) {
+        this.operation = new ConnectionOperation(hitPort, "undefined");
+        this.operation.load = new ConnectionLine(
+          hitPort.position,
+          this.getCursorPostionInCanvas(e),
+          this.canvas.context
         );
-      } else {
-        this.operation = new MoveOperation(this.hitObject, "undefined");
+        this.canvas.connections.push(this.operation.load);
       }
-    } else if (hitPort && hitPort.zIndex !== -Infinity) {
-      this.operation = new Operation(
-        actions.START_CONNECTION,
-        hitPort,
-        "undefined"
-      );
-      this.operation.load = new ConnectionLine(
-        hitPort.position,
-        { x: e.x, y: e.y },
-        this.canvas.context
-      );
-      this.canvas.connections.push(this.operation.load);
     }
     //----------------------------------------------
   },
@@ -198,7 +261,6 @@ const cursor = {
           // TODO: implement delete logic here for connections
         }
 
-        // console.log("connection hit", hit);
       });
     }
 
@@ -212,26 +274,25 @@ const cursor = {
     switch (this.operation.action) {
       case actions.MOVE:
         if (this.isDown) {
-          const pos = { x: e.x, y: e.y };
+          const pos = this.getCursorPostionInCanvas(e);
           this.operation.source.moveElement(pos, this.tempPosition);
-          this.operation.newPosition = pos;
-          this.tempPosition = { x: e.x, y: e.y };
+          this.tempPosition = this.getCursorPostionInCanvas(e);
         }
         break;
       case actions.COPY:
         if (this.operation.state === state.PENDING) {
-          this.tempPosition = { x: e.x, y: e.y };
+          this.tempPosition = this.getCursorPostionInCanvas(e);
 
           this.operation.state = state.FINISHED;
-          const copy = this.hitObject.makeCopy({ x: e.x, y: e.y });
-          this.operation = new Operation(actions.MOVE, copy, "undefined");
+          const copy = this.hitObject.makeCopy(this.getCursorPostionInCanvas(e));
+          this.operation = new MoveOperation(copy, "undefined");
         }
         break;
       case actions.START_CONNECTION:
         if (this.isDown && this.operation.load !== "undefined") {
           this.operation.load.end = {
-            x: e.x / window.canvasScale,
-            y: e.y / window.canvasScale,
+            x: this.position.x,
+            y: this.position.y,
           };
           this.operation.load.draw();
         }
@@ -251,14 +312,11 @@ const cursor = {
         case actions.MOVE:
         case actions.COPY:
           this.operation.state = state.FINISHED;
-          history.execute(this.operation);
+          this.operation.execute();
           break;
         case actions.START_CONNECTION:
           const targetPort = this.getHitPort(this.position);
           if (targetPort && targetPort.zIndex !== -Infinity) {
-            console.log("target port is =>", targetPort);
-
-            console.log(this.canvas.connections);
             if (
               !this.canvas.connections.some(
                 (element) =>
@@ -274,17 +332,16 @@ const cursor = {
               this.operation.source.isLeft !== targetPort.isLeft
             ) {
               this.operation.load.end = targetPort.position;
+              history.execute(this.operation);
             } else {
               this.canvas.connections.pop();
             }
           } else {
-            console.log("no target object found", this.operation);
-            console.log("connections =>", this.canvas.connections);
             this.canvas.connections.pop();
           }
 
           this.operation.state = state.FINISHED;
-          this.operation.load = "undefined";
+          // this.operation.load = "undefined";
           break;
         case actions.EXTEND_CONNECTION:
           break;
@@ -295,6 +352,39 @@ const cursor = {
       }
       this.hitObject = "undefined";
     }
+  },
+  onmousewheel: function (event) {
+    var mousex = event.clientX - this.offsetLeft;
+    var mousey = event.clientY - this.offsetTop;
+    var wheel = event.wheelDelta / 120; //n or -n
+
+    //according to Chris comment
+    var zoom = Math.pow(1 + Math.abs(wheel) / 2, wheel > 0 ? 1 : -1);
+
+    this.canvas.context.translate(this.x, this.y);
+    this.canvas.context.scale(zoom, zoom);
+    this.canvas.context.translate(
+      -(
+        mousex / window.canvasScale +
+        this.originx -
+        mousex / (window.canvasScale * zoom)
+      ),
+      -(
+        mousey / window.canvasScale +
+        this.originy -
+        mousey / (window.canvasScale * zoom)
+      )
+    );
+
+    this.originx =
+      mousex / window.canvasScale +
+      this.originx -
+      mousex / (window.canvasScale * zoom);
+    this.originy =
+      mousey / window.canvasScale +
+      this.originy -
+      mousey / (window.canvasScale * zoom);
+    window.canvasScale *= zoom;
   },
 
   topMost: function () {
@@ -324,18 +414,21 @@ const cursor = {
   },
   setHitObject: function () {
     const targetObjects = this.getAllHittedObjects();
+    
     if (targetObjects !== "undefined" && targetObjects.length > 0) {
       this.hitObject = targetObjects[targetObjects.length - 1];
     }
+
+    return targetObjects.length > 0;
   },
 
   getAllHittedObjects: function () {
     return this.canvas.children.filter((element) =>
       cursorHitTest(
-        element.x * window.canvasScale,
-        element.y * window.canvasScale,
-        element.width * window.canvasScale,
-        element.height * window.canvasScale,
+        element.x ,
+        element.y ,
+        element.width ,
+        element.height ,
         this.position.x,
         this.position.y
       )

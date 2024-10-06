@@ -97,13 +97,13 @@ class Rectangle extends Draggable {
     const leftPort = {
       x: this.x,
       y: this.y + this.height / 2,
-      r: 30,
+      r: this.height * 0.2,
     };
 
     const rightPort = {
       x: this.x + this.width,
       y: this.y + this.height / 2,
-      r: 30,
+      r: this.height * 0.2,
     };
 
     const lprt = new Port(

@@ -9,40 +9,33 @@ class Canvas extends Resizable {
   context;
   children = [];
   connections = [];
-  tempLine;
-  scaleFactor = 1.0;
-  offsetX = 0;
-  offsetY = 0;
-  originx = 0;
-  originy = 0;
-  constructor(id, parent, width, height) {
-    super(id, parent, width, height);
-    this.createDomElement(id, parent, width, height);
+  constructor(id, parent) {
+    super(id, parent);
+    this.createDomElement(id, parent);
   }
 
   /**
    * initialize the canvas object by creating its DOM element
-   * @param {string} id the DOM element id
+   * @param {string} id unique identifier for the canvas (UUID v4)
    * @param {HTMLElement} parent the element that should host/contain the canvas
-   * @param {Number} width the canvas width
-   * @param {Number} height canvas height
    */
-  createDomElement(id, parent, width, height) {
+  createDomElement(id = 'undefined', parent='undefined') {
     // create div to wrap the canvas
-    const divWrapper = el("#editorContainer");
-    // divWrapper.id = id;
-    parent.appendChild(divWrapper);
+    const divWrapper = el("#editor-container");
 
     // create canvas element and add it to the wrapper div
     this.canvasElem = document.createElement("canvas");
-    this.canvasElem.width = width;
-    this.canvasElem.height = height;
-    divWrapper.x = this.x;
-    divWrapper.y = this.y;
-    this.canvasElem.className = "drawingCanvas";
-
+    this.canvasElem.className = "drawing-canvas";
+    this.parent = divWrapper;
+    
     divWrapper.appendChild(this.canvasElem);
 
+    // we should set the width and height of the canvas to the width and 
+    // height of the parent div after it has been added to the DOM 
+    // otherwise the width and height will be 0
+    this.canvasElem.width = divWrapper.clientWidth;
+    this.canvasElem.height = divWrapper.clientHeight;
+    
     this.context = this.canvasElem.getContext("2d");
     if (cursor.canvas === undefined) {
       cursor.initCanvas(this);
@@ -57,25 +50,17 @@ class Canvas extends Resizable {
     this.children.forEach((element) => element.draw());
   }
 
- 
-
   render() {
     requestAnimationFrame(this.render.bind(this));
-    // this.context.setTransform()
     this.context.clearRect(
       0,
       0,
       this.canvasElem.width / window.canvasScale,
-      this.canvasElem.height  / window.canvasScale
+      this.canvasElem.height / window.canvasScale
     );
 
-    this.connections.forEach((element) => element.draw());
     this.children.forEach((element) => element.draw());
-
-    if (this.tempLine !== undefined) {
-      this.tempLine.destinationNode.position = this.cursorPosition;
-      this.tempLine.draw();
-    }
+    this.connections.forEach((element) => element.draw());
   }
 
   // Export Image ################################################################

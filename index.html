@@ -3,19 +3,35 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script type="module" src="modules/app.js" defer></script>
   <link rel="stylesheet" href="css/style.css">
+  <script type="module" src="modules/app.js" defer></script>
   <title>Node Editor</title>
 </head>
 <body>
-  <div width="200" height="300">
-    <h1> tool box</h1>
-  </div>
-  <div id="editorBody">
-    <div id="leftPanel">
-      <h1>Left Panel</h1>
+  <nav id="navbar">
+    <div class="nav-container">
+      <ul>
+        <li><a href="#">File</a></li>
+        <li><a href="#">View</a></li>
+        <li><a href="#">Edit</a></li>
+        <li><a href="#">Help</a></li>
+      </ul>
     </div>
-    <div id="editorContainer"></div>
-  </div>
+  </nav>
+
+  <section id="tool-box">
+    <div class="container">
+      <h1>Tool Box</h1>
+    </div>
+  </section>
+
+  <section id="editor-body">
+    <aside id="sidepanel">
+      <h1>Side Panel</h1>
+    </aside>
+    <div id="editor-container"></div>
+  </section>
+
+  <!-- <script type="module" src="./modules/app.js"></script> -->
 </body>
 </html>

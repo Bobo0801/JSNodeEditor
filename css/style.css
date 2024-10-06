@@ -1,27 +1,82 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-.drawingCanvas {
+
+#editor-body {
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  /* width: 100%; */
+  background-color: beige;
+  /* height: max-content; */
+}
+
+#editor-container {
+  /* background-color: #fff;
+  flex: 4;
+  width: 800px; */
+  /* padding-right: 50px; */
+  
+  flex: 4;
+  background-color: #fff;
+  object-fit:none;
+  object-position:top left;
   border: solid 1px;
 }
 
+.drawing-canvas{
+  background-color: #fff;
+  border: solid 1px;
+}
+
+#sidepanel {
+  flex: 1;
+  background-color: azure;
+  border: solid 1px;
+}
+
+/* ---------------------------------------------- Node ---------------------------------------*/  
 .block {
   background-color: antiquewhite;
 }
 
-#editorContainer {
+/* ---------------------------------------------- Main Menu ----------------------------------*/  
+.nav-container {
   display: flex;
-  flex-direction: row;
-  background-color: beige;
-  display: inline-block;
-  width: 300px;
 }
 
-#leftPanel{
-  width: 100px;
-  background-color: azure;
+#navbar {
+  background-color: #333;
+  color: #fff;
+  padding-top: 10px;
+  min-height: 70px;
+  border-bottom: #333 solid 3px;
+  position: sticky;
+  z-index: 1000;
 }
 
-#editorBody {
-  width: 20%;
+#navbar ul {
+  padding: 0;
+  list-style: none;
+}
+
+#navbar ul li {
+  display: inline;
+}
+
+#navbar ul li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 18px;
+  padding-right: 15px;
+}
+
+/* ---------------------------------------------- Tool Box ----------------------------------*/  
+#tool-box {
   background-color: beige;
-  display: inline-block;
+  width: 100%;
+  padding: 10px;
 }

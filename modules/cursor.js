@@ -6,14 +6,7 @@ const actions = {
   MOVE: "move",
   COPY: "copy",
   START_CONNECTION: "start_connection",
-  EXTEND_CONNECTION: "extend_connection",
-  FINISH_CONNECTION: "finish_connection",
-  // RESIZE: 'resize',
-  // DELETE: 'delete',
-  // ADD: 'add',
-  // DISCONNECT: 'disconnect',
-  // SELECT: 'select',
-  // DESELECT: 'deselect',
+  DELETE: "delete",
 };
 
 const state = {
@@ -87,14 +80,14 @@ class CopyOperation extends Operation {
     this.newPosition = "undefined";
   }
   execute() {
-    const copy = cursor.canvas.children.pop();
     history.execute(this);
   }
   undo() {
+    
     cursor.canvas.children.pop();
   }
   redo() {
-    cursor.canvas.children.push(this.source);
+    cursor.canvas.children.push(this.load);
   }
 }
 
@@ -111,6 +104,22 @@ class ConnectionOperation extends Operation {
   }
   redo() {
     cursor.canvas.connections.push(this.load);
+  }
+}
+
+class DeleteOperation extends Operation {
+  constructor(source, target) {
+    super(actions.DELETE, source, target);
+  }
+  execute() {
+    cursor.canvas.children.pop();
+    history.execute(this);
+  }
+  undo() {
+    cursor.canvas.children.push(this.source);
+  }
+  redo() {
+    cursor.canvas.children.pop();
   }
 }
 
@@ -147,8 +156,15 @@ const history = {
       this.undo();
     } else if (e.ctrlKey && e.key === "y") {
       this.redo();
+    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+      const so = cursor.selectedObject;
+      if (so !== "undefined") {
+        const operation = new DeleteOperation(so, "undefined");
+        operation.execute();
+      }
     }
-  },
+
+  }
 };
 
 const cursor = {
@@ -158,18 +174,20 @@ const cursor = {
   isDown: false,
   tempPosition: { x: 0, y: 0 },
   hitObject: "undefined",
+  selectedObject: "undefined",
 
-  scaleFactor: 1.0,
-  offsetX: 0,
-  offsetY: 0,
   originx: 0,
   originy: 0,
 
   getCursorPostionInCanvas(e) {
     return {
-      x: (e.clientX - this.canvas.canvasElem.getBoundingClientRect().left - 1) / window.canvasScale,
-      y: (e.clientY - this.canvas.canvasElem.getBoundingClientRect().top - 1) / window.canvasScale,
-    }
+      x:
+        (e.clientX - this.canvas.canvasElem.getBoundingClientRect().left - 1) /
+        window.canvasScale,
+      y:
+        (e.clientY - this.canvas.canvasElem.getBoundingClientRect().top - 1) /
+        window.canvasScale,
+    };
   },
 
   updateCursorPosition(e) {
@@ -216,26 +234,20 @@ const cursor = {
   },
   mouseDown: function (e) {
     this.isDown = true;
-    this.tempPosition =  this.getCursorPostionInCanvas(e);
-    
+    this.tempPosition = this.getCursorPostionInCanvas(e);
+
     // set hitObject
     const hitPort = this.getHitPort(this.position);
     if (this.setHitObject() || hitPort) {
-      
-      
       // handle operation ----------------------------------------
-      
-      
+      this.selectedObject = this.hitObject;
       if (
         this.hitObject &&
         this.hitObject.isMovable &&
         hitPort.zIndex === -Infinity
       ) {
         if (e.altKey) {
-          this.operation = new CopyOperation(
-            this.hitObject,
-            "undefined"
-          );
+          this.operation = new CopyOperation(this.hitObject, "undefined");
         } else {
           this.operation = new MoveOperation(this.hitObject, "undefined");
           // this.operation.oldPosition = this.tempPosition;
@@ -249,6 +261,8 @@ const cursor = {
         );
         this.canvas.connections.push(this.operation.load);
       }
+    }else{
+      this.selectedObject = "undefined";
     }
     //----------------------------------------------
   },
@@ -260,7 +274,6 @@ const cursor = {
         if (hit) {
           // TODO: implement delete logic here for connections
         }
-
       });
     }
 
@@ -284,7 +297,12 @@ const cursor = {
           this.tempPosition = this.getCursorPostionInCanvas(e);
 
           this.operation.state = state.FINISHED;
-          const copy = this.hitObject.makeCopy(this.getCursorPostionInCanvas(e));
+          const copy = this.hitObject.makeCopy(
+            this.getCursorPostionInCanvas(e)
+          );
+          this.operation.load = copy;
+          this.selectedObject = copy;
+          history.execute(this.operation);
           this.operation = new MoveOperation(copy, "undefined");
         }
         break;
@@ -296,10 +314,6 @@ const cursor = {
           };
           this.operation.load.draw();
         }
-        break;
-      case actions.EXTEND_CONNECTION:
-        break;
-      case actions.FINISH_CONNECTION:
         break;
       default:
         break;
@@ -343,10 +357,6 @@ const cursor = {
           this.operation.state = state.FINISHED;
           // this.operation.load = "undefined";
           break;
-        case actions.EXTEND_CONNECTION:
-          break;
-        case actions.FINISH_CONNECTION:
-          break;
         default:
           break;
       }
@@ -354,37 +364,39 @@ const cursor = {
     }
   },
   onmousewheel: function (event) {
-    var mousex = event.clientX - this.offsetLeft;
-    var mousey = event.clientY - this.offsetTop;
-    var wheel = event.wheelDelta / 120; //n or -n
+    if (event.ctrlKey) {
+     event.preventDefault();
+      var mousex = event.clientX - this.offsetLeft;
+      var mousey = event.clientY - this.offsetTop;
+      var wheel = event.wheelDelta / 120; //n or -n
 
-    //according to Chris comment
-    var zoom = Math.pow(1 + Math.abs(wheel) / 2, wheel > 0 ? 1 : -1);
+      var zoom = Math.pow(1 + Math.abs(wheel) / 2, wheel > 0 ? 1 : -1);
 
-    this.canvas.context.translate(this.x, this.y);
-    this.canvas.context.scale(zoom, zoom);
-    this.canvas.context.translate(
-      -(
+      this.canvas.context.translate(this.x, this.y);
+      this.canvas.context.scale(zoom, zoom);
+      this.canvas.context.translate(
+        -(
+          mousex / window.canvasScale +
+          this.originx -
+          mousex / (window.canvasScale * zoom)
+        ),
+        -(
+          mousey / window.canvasScale +
+          this.originy -
+          mousey / (window.canvasScale * zoom)
+        )
+      );
+
+      this.originx =
         mousex / window.canvasScale +
         this.originx -
-        mousex / (window.canvasScale * zoom)
-      ),
-      -(
+        mousex / (window.canvasScale * zoom);
+      this.originy =
         mousey / window.canvasScale +
         this.originy -
-        mousey / (window.canvasScale * zoom)
-      )
-    );
-
-    this.originx =
-      mousex / window.canvasScale +
-      this.originx -
-      mousex / (window.canvasScale * zoom);
-    this.originy =
-      mousey / window.canvasScale +
-      this.originy -
-      mousey / (window.canvasScale * zoom);
-    window.canvasScale *= zoom;
+        mousey / (window.canvasScale * zoom);
+      window.canvasScale *= zoom;
+    }
   },
 
   topMost: function () {
@@ -414,7 +426,7 @@ const cursor = {
   },
   setHitObject: function () {
     const targetObjects = this.getAllHittedObjects();
-    
+
     if (targetObjects !== "undefined" && targetObjects.length > 0) {
       this.hitObject = targetObjects[targetObjects.length - 1];
     }
@@ -425,10 +437,10 @@ const cursor = {
   getAllHittedObjects: function () {
     return this.canvas.children.filter((element) =>
       cursorHitTest(
-        element.x ,
-        element.y ,
-        element.width ,
-        element.height ,
+        element.x,
+        element.y,
+        element.width,
+        element.height,
         this.position.x,
         this.position.y
       )

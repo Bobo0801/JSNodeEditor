@@ -464,7 +464,7 @@ const cursor = {
 
   onDbClick: function (e) {
     if (this.selectedObject !== "undefined") {
-      const contentCanvas = new Canvas();
+      const contentCanvas = this.selectedObject.contentCanvas ? this.selectedObject.contentCanvas : new Canvas();
       this.selectedObject.contentCanvas = contentCanvas;
       contentCanvas.parentNode = this.selectedObject;
       this.deinitCanvas();

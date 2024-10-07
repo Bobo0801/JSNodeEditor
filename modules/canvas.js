@@ -1,6 +1,5 @@
 import { el } from "./helpers.js";
 import { Resizable } from "./basic.js";
-import { cursor } from "./cursor.js";
 
 class Canvas extends Resizable {
   x;
@@ -9,9 +8,11 @@ class Canvas extends Resizable {
   context;
   children = [];
   connections = [];
+  parentNode;
+  paused = false;
   constructor(id, parent) {
     super(id, parent);
-    this.createDomElement(id, parent);
+    // this.createDomElement(id, parent);
   }
 
   /**
@@ -19,7 +20,7 @@ class Canvas extends Resizable {
    * @param {string} id unique identifier for the canvas (UUID v4)
    * @param {HTMLElement} parent the element that should host/contain the canvas
    */
-  createDomElement(id = 'undefined', parent='undefined') {
+  createDomElement(id = "undefined", parent = "undefined") {
     // create div to wrap the canvas
     const divWrapper = el("#editor-container");
 
@@ -27,40 +28,53 @@ class Canvas extends Resizable {
     this.canvasElem = document.createElement("canvas");
     this.canvasElem.className = "drawing-canvas";
     this.parent = divWrapper;
-    
+
     divWrapper.appendChild(this.canvasElem);
 
-    // we should set the width and height of the canvas to the width and 
-    // height of the parent div after it has been added to the DOM 
+    // we should set the width and height of the canvas to the width and
+    // height of the parent div after it has been added to the DOM
     // otherwise the width and height will be 0
     this.canvasElem.width = divWrapper.clientWidth;
     this.canvasElem.height = divWrapper.clientHeight;
-    
+
     this.context = this.canvasElem.getContext("2d");
-    if (cursor.canvas === undefined) {
-      cursor.initCanvas(this);
-    }
+
+    this.canvasElem.tabIndex = 1;
+
+    this.context.scale(canvasScale, canvasScale);
+
+    // TODO: investigate why this is necessary. we call init in block constructor
+    this.children.forEach((element) => element.init());
+    this.connections.forEach((element) => element.init());
+    this.drawConnections();
+    this.paused = false;
+    this.render();
   }
 
   drawConnections() {
-    this.connections.forEach((element) => element.draw());
+    this.connections.forEach((element) => {
+      // console.log(element);
+      
+      element.draw();
+    });
   }
 
-  drawNode() {
+  drawNodes() {
     this.children.forEach((element) => element.draw());
   }
 
   render() {
-    requestAnimationFrame(this.render.bind(this));
+    if (this.paused) return;
     this.context.clearRect(
       0,
       0,
       this.canvasElem.width / window.canvasScale,
       this.canvasElem.height / window.canvasScale
     );
-
-    this.children.forEach((element) => element.draw());
-    this.connections.forEach((element) => element.draw());
+    requestAnimationFrame(this.render.bind(this));
+    
+    this.drawNodes();
+    this.drawConnections();
   }
 
   // Export Image ################################################################

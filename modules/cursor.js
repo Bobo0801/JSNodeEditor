@@ -1,3 +1,4 @@
+import { Canvas } from "./canvas.js";
 import { cursorHitTest, isIntersect } from "./helpers.js";
 import { ConnectionLine } from "./line.js";
 
@@ -83,7 +84,6 @@ class CopyOperation extends Operation {
     history.execute(this);
   }
   undo() {
-    
     cursor.canvas.children.pop();
   }
   redo() {
@@ -156,15 +156,14 @@ const history = {
       this.undo();
     } else if (e.ctrlKey && e.key === "y") {
       this.redo();
-    } else if (e.key === 'Backspace' || e.key === 'Delete') {
+    } else if (e.key === "Backspace" || e.key === "Delete") {
       const so = cursor.selectedObject;
       if (so !== "undefined") {
         const operation = new DeleteOperation(so, "undefined");
         operation.execute();
       }
     }
-
-  }
+  },
 };
 
 const cursor = {
@@ -199,6 +198,7 @@ const cursor = {
 
   initCanvas(canvas) {
     this.canvas = canvas;
+    this.canvas.createDomElement();
     this.canvas.canvasElem.addEventListener(
       "mousedown",
       this.mouseDown.bind(this),
@@ -231,6 +231,55 @@ const cursor = {
       this.onmousewheel.bind(this),
       false
     );
+
+    this.canvas.canvasElem.addEventListener(
+      "dblclick",
+      this.onDbClick.bind(this),
+      false
+    );
+  },
+
+  deinitCanvas() {
+    this.canvas.canvasElem.removeEventListener(
+      "mousedown",
+      this.mouseDown.bind(this),
+      false
+    );
+    this.canvas.canvasElem.removeEventListener(
+      "mousemove",
+      this.mouseMove.bind(this),
+      false
+    );
+    this.canvas.canvasElem.removeEventListener(
+      "mouseup",
+      this.mouseUp.bind(this),
+      false
+    );
+    this.canvas.canvasElem.removeEventListener(
+      "keydown",
+      history.onkeydown.bind(history),
+      false
+    );
+
+    this.canvas.canvasElem.removeEventListener(
+      "mousemove",
+      this.updateCursorPosition.bind(this),
+      false
+    );
+
+    this.canvas.canvasElem.removeEventListener(
+      "mousewheel",
+      this.onmousewheel.bind(this),
+      false
+    );
+
+    this.canvas.canvasElem.removeEventListener(
+      "dblclick",
+      this.onDbClick.bind(this),
+      false
+    );
+    this.canvas.canvasElem.remove();
+    this.canvas.paused = true
   },
   mouseDown: function (e) {
     this.isDown = true;
@@ -261,7 +310,7 @@ const cursor = {
         );
         this.canvas.connections.push(this.operation.load);
       }
-    }else{
+    } else {
       this.selectedObject = "undefined";
     }
     //----------------------------------------------
@@ -365,7 +414,7 @@ const cursor = {
   },
   onmousewheel: function (event) {
     if (event.ctrlKey) {
-     event.preventDefault();
+      event.preventDefault();
       var mousex = event.clientX - this.offsetLeft;
       var mousey = event.clientY - this.offsetTop;
       var wheel = event.wheelDelta / 120; //n or -n
@@ -399,6 +448,24 @@ const cursor = {
     }
   },
 
+  onDbClick: function (e) {
+    if (this.selectedObject !== "undefined") {
+      const contentCanvas = new Canvas();
+      this.selectedObject.contentCanvas = contentCanvas;
+      contentCanvas.parentNode = this.selectedObject;
+      this.deinitCanvas();
+      this.initCanvas(contentCanvas);
+    } else {
+      console.log("No object selected");
+      if (this.canvas.parentNode) {
+        const contentCanvas = this.canvas.parentNode.parent;
+        console.log(contentCanvas);
+        this.deinitCanvas();
+        this.initCanvas(contentCanvas);
+      }
+    }
+  },
+
   topMost: function () {
     return this.hitObjects[this.hitObjects.length - 1]; // TODO: check if this is correct
   },
@@ -406,7 +473,8 @@ const cursor = {
     return [...this.canvas.children.map((element) => element.ports)].reduce(
       function (prev, curr) {
         return prev.concat(curr);
-      }
+      },
+      []
     );
   },
   getHitPort: function (position) {

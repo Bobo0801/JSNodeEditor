@@ -54,15 +54,17 @@ class Port {
 class Rectangle extends Draggable {
   cssClassName;
   ports = [];
+  contentCanvas;
   constructor(x, y, height, width, parent, cssClassName, id = undefined) {
     super();
-    this.x = x ;
-    this.y = y ;
+    this.x = x;
+    this.y = y;
     this.height = height;
     this.width = width;
     this.parent = parent;
     this.cssClassName = cssClassName;
     this.id = id === undefined ? generateUuidv4() : id;
+    this.init();
   }
 
   init() {
@@ -90,7 +92,6 @@ class Rectangle extends Draggable {
     this.parent.context.fillStyle = bc;
     this.parent.context.strokeRect(this.x, this.y, this.width, this.height);
     this.parent.context.fillRect(this.x, this.y, this.width, this.height);
-
   }
 
   createPorts() {

@@ -11,15 +11,11 @@
   justify-content: left;
   /* width: 100%; */
   background-color: beige;
+  min-height: 800px;
   /* height: max-content; */
 }
 
 #editor-container {
-  /* background-color: #fff;
-  flex: 4;
-  width: 800px; */
-  /* padding-right: 50px; */
-  
   flex: 4;
   background-color: #fff;
   object-fit:none;
@@ -52,7 +48,7 @@
   background-color: #333;
   color: #fff;
   padding-top: 10px;
-  min-height: 70px;
+  min-height: 40px;
   border-bottom: #333 solid 3px;
   position: sticky;
   z-index: 1000;
@@ -71,7 +67,7 @@
   color: #fff;
   text-decoration: none;
   padding: 18px;
-  padding-right: 15px;
+  /* padding-right: 15px; */
 }
 
 /* ---------------------------------------------- Tool Box ----------------------------------*/  

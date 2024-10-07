@@ -1,37 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/style.css">
-  <script type="module" src="modules/app.js" defer></script>
-  <title>Node Editor</title>
-</head>
-<body>
-  <nav id="navbar">
-    <div class="nav-container">
-      <ul>
-        <li><a href="#">File</a></li>
-        <li><a href="#">View</a></li>
-        <li><a href="#">Edit</a></li>
-        <li><a href="#">Help</a></li>
-      </ul>
-    </div>
-  </nav>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="css/style.css" />
+    <script type="module" src="modules/app.js" defer></script>
+    <title>Node Editor</title>
+  </head>
+  <body>
+    <nav id="navbar">
+      <div class="nav-container">
+        <ul>
+          <li><a href="#">File</a></li>
+          <li><a href="#">View</a></li>
+          <li><a href="#">Edit</a></li>
+          <li><a href="#">Help</a></li>
+        </ul>
+      </div>
+    </nav>
 
-  <section id="tool-box">
-    <div class="container">
-      <h1>Tool Box</h1>
-    </div>
-  </section>
+    <section id="tool-box">
+      <div class="container">
+        <h1>Tool Box</h1>
+        <div
+          class="stencil"
+          draggable="true"
+          data-block-type="block-type-1"
+          data-block-width="100"
+          data-block-height="50"
+        >
+          Node 1
+        </div>
+      </div>
+    </section>
 
-  <section id="editor-body">
-    <aside id="sidepanel">
-      <h1>Side Panel</h1>
-    </aside>
-    <div id="editor-container"></div>
-  </section>
+    <section id="editor-body">
+      <aside id="sidepanel">
+        <h1>Side Panel</h1>
+      </aside>
+      <div id="editor-container"></div>
+    </section>
 
-  <!-- <script type="module" src="./modules/app.js"></script> -->
-</body>
+    <footer id="footer">
+      <div class="container">
+        <p>Node Editor &copy; 2024 Dario, Ahmed</p>
+      </div>
+
+    <!-- <script type="module" src="./modules/app.js"></script> -->
+  </body>
 </html>

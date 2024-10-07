@@ -1,6 +1,24 @@
+/**
+ * @module Canvas
+ * @description This module is used to create a canvas object.
+ */
+
 import { el } from "./helpers.js";
 import { Resizable } from "./basic.js";
 
+/**
+ * @class Canvas
+ * @description This class is used to create a canvas object.
+ * The canvas object is used to draw the nodes and connections.
+ * The canvas object is a resizable object.
+ * The canvas object has a parent node.
+ * The canvas object has a canvas element.
+ * The canvas object has a context.
+ * The canvas object has an array of children nodes.
+ * The canvas object has an array of connections.
+ * The canvas object has a parent node.
+ * The canvas object has a paused state.
+ */
 class Canvas extends Resizable {
   x;
   y;
@@ -54,7 +72,7 @@ class Canvas extends Resizable {
   drawConnections() {
     this.connections.forEach((element) => {
       // console.log(element);
-      
+
       element.draw();
     });
   }
@@ -72,7 +90,7 @@ class Canvas extends Resizable {
       this.canvasElem.height / window.canvasScale
     );
     requestAnimationFrame(this.render.bind(this));
-    
+
     this.drawNodes();
     this.drawConnections();
   }

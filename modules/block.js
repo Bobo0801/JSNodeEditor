@@ -3,11 +3,7 @@ import {
   isIntersect,
   generateUuidv4,
 } from "./helpers.js";
-import { Canvas } from "./canvas.js";
 import { Draggable } from "./draggable.js";
-import { Resizable } from "./basic.js";
-import { ConnectionLine } from "./line.js";
-import { cursor } from "./cursor.js";
 
 // TODO: extend Resizable
 class Port {
@@ -22,7 +18,6 @@ class Port {
     this.position = position;
     this.r = r;
     this.parent = parent;
-    this.ctx = cursor.canvas.context;
     this.id = id === undefined ? generateUuidv4() : id;
     this.isLeft = isLeft;
   }
@@ -33,8 +28,8 @@ class Port {
       : this.parent.x + this.parent.width;
 
     this.position.y = this.parent.y + this.parent.height / 2;
-    this.ctx.beginPath();
-    this.ctx.arc(
+    this.parent.parent.context.beginPath();
+    this.parent.parent.context.arc(
       this.position.x,
       this.position.y,
       this.r,
@@ -42,12 +37,15 @@ class Port {
       Math.PI * 2,
       false
     );
-    this.ctx.fillStyle = "#3498db";
-    this.ctx.fill();
-    this.ctx.lineWidth = 2;
-    this.ctx.strokeStyle = "#2980b9";
-    this.ctx.stroke();
-    this.ctx.closePath();
+    this.parent.parent.context.fillStyle = "#3498db";
+    this.parent.parent.context.fill();
+    this.parent.parent.context.lineWidth = 2;
+    this.parent.parent.context.strokeStyle = "#2980b9";
+    this.parent.parent.context.stroke();
+    this.parent.parent.context.closePath();
+
+    // console.log(`this.position.x: ${this.position.x}, this.position.y: ${this.position.y}, this.r: ${this.r}, this.ctx.fillStyle: ${this.ctx.fillStyle}, this.ctx.lineWidth: ${this.ctx.lineWidth}, this.ctx.strokeStyle: ${this.ctx.strokeStyle}`);
+    
   }
 }
 
@@ -55,7 +53,7 @@ class Rectangle extends Draggable {
   cssClassName;
   ports = [];
   contentCanvas;
-  constructor(x, y, height, width, parent, cssClassName, id = undefined) {
+  constructor(x, y, width, height, parent, cssClassName, id = undefined) {
     super();
     this.x = x;
     this.y = y;
@@ -68,16 +66,18 @@ class Rectangle extends Draggable {
   }
 
   init() {
-    this.zIndex =
-      this.parent.children.length > 0
-        ? Math.max(...this.parent.children.map((o) => o.zIndex)) + 1
-        : 1;
-    this.parent.children.forEach((element) => {
-      element.isTopMost = false;
-    });
-    this.isTopMost = true;
-    this.parent.children.push(this);
-    super.init();
+    if (!this.parent.children.some((element) => element.id === this.id)) {
+      this.zIndex =
+        this.parent.children.length > 0
+          ? Math.max(...this.parent.children.map((o) => o.zIndex)) + 1
+          : 1;
+      this.parent.children.forEach((element) => {
+        element.isTopMost = false;
+      });
+      this.isTopMost = true;
+      this.parent.children.push(this);
+      super.init();
+    }
     this.createPorts();
   }
 
@@ -95,6 +95,8 @@ class Rectangle extends Draggable {
   }
 
   createPorts() {
+
+    // TODO: if you intend to have more than two ports, you should think of a better way to create them
     const leftPort = {
       x: this.x,
       y: this.y + this.height / 2,
@@ -106,22 +108,35 @@ class Rectangle extends Draggable {
       y: this.y + this.height / 2,
       r: this.height * 0.2,
     };
+    if (this.ports.length == 2) {
+      // set the position of the ports
+      // get left port
+      // const lprt = this.ports.find((element) => element.isLeft);
+      // lprt.position = { x: leftPort.x, y: leftPort.y };
+      // // get right port
+      // const rprt = this.ports.find((element) => !element.isLeft);
+      // rprt.position = { x: rightPort.x, y: rightPort.y };
 
-    const lprt = new Port(
-      { x: leftPort.x, y: leftPort.y },
-      leftPort.r,
-      this,
-      true
-    );
+      // console.log(this.ports);
+      
+    } else {
 
-    const rprt = new Port(
-      { x: rightPort.x, y: rightPort.y },
-      rightPort.r,
-      this
-    );
+      const lprt = new Port(
+        { x: leftPort.x, y: leftPort.y },
+        leftPort.r,
+        this,
+        true
+      );
 
-    this.ports.push(lprt);
-    this.ports.push(rprt);
+      const rprt = new Port(
+        { x: rightPort.x, y: rightPort.y },
+        rightPort.r,
+        this
+      );
+
+      this.ports.push(lprt);
+      this.ports.push(rprt);
+    }
   }
 
   isPortHit(cursorPosition) {
@@ -147,8 +162,8 @@ class Rectangle extends Draggable {
     const copy = new Rectangle(
       this.x + 10,
       this.y + 10,
-      this.height,
       this.width,
+      this.height,
       this.parent,
       this.cssClassName
     );

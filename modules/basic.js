@@ -1,4 +1,4 @@
-//TODO: think of generic structure that also suppots circle and other shapes
+//TODO: think of generic structure that also supports circle and other shapes
 class Basic {
   id; // guid or unique identifier
   x;
@@ -15,6 +15,11 @@ class Basic {
   deinit() {}
 }
 
+
+/**
+ * This class is used to  add a resizable property to the basic class
+ * TODO: think of removing resizing logic from cursor object to this class
+ */
 class Resizable extends Basic {
   ratio = 1.0;
   constructor(x, y, height, width, ratio = 1) {

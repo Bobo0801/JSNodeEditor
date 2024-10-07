@@ -1,6 +1,7 @@
 import { Canvas } from "./canvas.js";
 import { cursorHitTest, isIntersect } from "./helpers.js";
 import { ConnectionLine } from "./line.js";
+import { Rectangle } from "./block.js";
 
 const actions = {
   IDLE: "idle",
@@ -237,6 +238,19 @@ const cursor = {
       this.onDbClick.bind(this),
       false
     );
+
+    // Add drag and drop event listeners
+    this.canvas.canvasElem.addEventListener(
+      "dragover",
+      this.onDragOver.bind(this),
+      false
+    );
+
+    this.canvas.canvasElem.addEventListener(
+      "drop",
+      this.onDrop.bind(this),
+      false
+    );
   },
 
   deinitCanvas() {
@@ -279,7 +293,7 @@ const cursor = {
       false
     );
     this.canvas.canvasElem.remove();
-    this.canvas.paused = true
+    this.canvas.paused = true;
   },
   mouseDown: function (e) {
     this.isDown = true;
@@ -306,7 +320,7 @@ const cursor = {
         this.operation.load = new ConnectionLine(
           hitPort.position,
           this.getCursorPostionInCanvas(e),
-          this.canvas.context
+          this.canvas
         );
         this.canvas.connections.push(this.operation.load);
       }
@@ -456,14 +470,45 @@ const cursor = {
       this.deinitCanvas();
       this.initCanvas(contentCanvas);
     } else {
-      console.log("No object selected");
       if (this.canvas.parentNode) {
         const contentCanvas = this.canvas.parentNode.parent;
-        console.log(contentCanvas);
         this.deinitCanvas();
         this.initCanvas(contentCanvas);
       }
     }
+  },
+  onDragOver(e) {
+    e.preventDefault();
+  },
+
+  onDrop(e) {
+    e.preventDefault();
+    // TODO: use the next line in case multiple block types are used. till now we have only one block type. you can use it in a switch statement
+    const blockType = e.dataTransfer.getData("text/plain");
+
+    // Retrieve the stencil element
+    const stencil = document.querySelector(`[data-block-type="${blockType}"]`);
+    if (!stencil) {
+      console.error("Stencil not found");
+      return;
+    }
+
+    // Get block dimensions from data attributes
+    const width = parseInt(stencil.getAttribute("data-block-width"));
+    const height = parseInt(stencil.getAttribute("data-block-height"));
+
+    const x = e.clientX - this.canvas.canvasElem.getBoundingClientRect().left;
+    const y = e.clientY - this.canvas.canvasElem.getBoundingClientRect().top;
+
+    // TODO: use operation to create new block, so that it can be undone
+    const rect = new Rectangle(
+      x - width / 2,
+      y - height / 2,
+      width,
+      height,
+      this.canvas,
+      ".block"
+    );
   },
 
   topMost: function () {
@@ -513,6 +558,18 @@ const cursor = {
         this.position.y
       )
     );
+  },
+
+  // Drag and Drop Stencil
+  initStencils() {
+    const stencils = document.querySelectorAll(".stencil");
+    stencils.forEach((stencil) => {
+      stencil.addEventListener("dragstart", this.onDragStart.bind(this), false);
+    });
+  },
+
+  onDragStart(e) {
+    e.dataTransfer.setData("text/plain", e.target.dataset.blockType);
   },
 };
 export { Operation, actions, cursor, history };

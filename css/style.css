@@ -4,7 +4,6 @@
   box-sizing: border-box;
 }
 
-
 #editor-body {
   display: flex;
   flex-direction: row;
@@ -18,28 +17,31 @@
 #editor-container {
   flex: 4;
   background-color: #fff;
-  object-fit:none;
-  object-position:top left;
+  object-fit: none;
+  object-position: top left;
   border: solid 1px;
+  box-shadow: #333 2px 0px 5px;
 }
 
-.drawing-canvas{
+.drawing-canvas {
   background-color: #fff;
-  border: solid 1px;
+  /* border: solid 1px; */
 }
 
 #sidepanel {
   flex: 1;
   background-color: azure;
   border: solid 1px;
+  box-shadow: #333 2px 0px 5px;
+  text-align: center;
 }
 
-/* ---------------------------------------------- Node ---------------------------------------*/  
+/* ---------------------------------------------- Node ---------------------------------------*/
 .block {
   background-color: antiquewhite;
 }
 
-/* ---------------------------------------------- Main Menu ----------------------------------*/  
+/* ---------------------------------------------- Main Menu ----------------------------------*/
 .nav-container {
   display: flex;
 }
@@ -70,9 +72,30 @@
   /* padding-right: 15px; */
 }
 
-/* ---------------------------------------------- Tool Box ----------------------------------*/  
+/* ---------------------------------------------- Footer ------------------------------------*/
+#footer {
+  background-color: #333;
+  color: #fff;
+  padding: 10px;
+  text-align: center;
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+}
+
+/* ---------------------------------------------- Tool Box ----------------------------------*/
 #tool-box {
   background-color: beige;
   width: 100%;
   padding: 10px;
+}
+
+.stencil {
+  background-color: antiquewhite;
+  border: solid 1px;
+  padding: 5px;
+  margin: 5px;
+  width: 50px;
+  height: 50px;
+  text-align: center;
 }

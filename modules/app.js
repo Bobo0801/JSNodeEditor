@@ -2,19 +2,16 @@
 
 import { Canvas } from "./canvas.js";
 import { Rectangle } from "./block.js";
-import { cursor } from "./cursor.js";
+import { cursor } from "./core.js";
 
 window.canvasScale = 1;
 
+// add root canvas to the document. This could be done by loading a file in the future
 const canvas = new Canvas();
-
-// canvas.canvasElem.tabIndex = 1;
-// canvas.focus(); 
 if (cursor.canvas === undefined) {
   cursor.initCanvas(canvas);
 }
 
-const rect = new Rectangle(150, 150, 50, 100, canvas, ".block");
-// rect.init();
+cursor.initStencils();
 
 

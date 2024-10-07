@@ -1,6 +1,12 @@
+/**
+ * @module Draggable
+ * @description This module is used to create draggable elements.
+ * TODO: think of moving dragging logic from cursor object to this class
+ */
+
 import { get_style_rule_value, cursorHitTest } from "./helpers.js";
 import { Resizable } from "./basic.js";
-import { actions } from "./cursor.js";
+import { actions } from "./core.js";
 
 class Draggable extends Resizable {
   isHit;

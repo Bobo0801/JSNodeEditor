@@ -9,6 +9,7 @@ const actions = {
   COPY: "copy",
   START_CONNECTION: "start_connection",
   DELETE: "delete",
+  DELETE_CONNECTION: "delete_connection",
 };
 
 const state = {
@@ -124,6 +125,22 @@ class DeleteOperation extends Operation {
   }
 }
 
+class DeleteConnectionOperation extends Operation {
+  constructor(source, target) {
+    super(actions.DELETE, source, target);
+  }
+  execute() {
+    cursor.canvas.connections.pop();
+    history.execute(this);
+  }
+  undo() {
+    cursor.canvas.connections.push(this.source);
+  }
+  redo() {
+    cursor.canvas.connections.pop();
+  }
+}
+
 const history = {
   operations: [],
   undoStack: [],
@@ -162,6 +179,12 @@ const history = {
       if (so !== "undefined") {
         const operation = new DeleteOperation(so, "undefined");
         operation.execute();
+      } else if (cursor.hitConnection !== "undefined") {
+        const operation = new DeleteConnectionOperation(
+          cursor.hitConnection,
+          "undefined"
+        );
+        operation.execute();
       }
     }
   },
@@ -174,6 +197,7 @@ const cursor = {
   isDown: false,
   tempPosition: { x: 0, y: 0 },
   hitObject: "undefined",
+  hitConnection: "undefined",
   selectedObject: "undefined",
 
   originx: 0,
@@ -298,6 +322,10 @@ const cursor = {
   mouseDown: function (e) {
     this.isDown = true;
     this.tempPosition = this.getCursorPostionInCanvas(e);
+
+    this.hitConnection = this.canvas.connections.find((element) =>
+      this.canvas.context.isPointInPath(element.path, e.x, e.y)
+    );
 
     // set hitObject
     const hitPort = this.getHitPort(this.position);
@@ -464,7 +492,9 @@ const cursor = {
 
   onDbClick: function (e) {
     if (this.selectedObject !== "undefined") {
-      const contentCanvas = this.selectedObject.contentCanvas ? this.selectedObject.contentCanvas : new Canvas();
+      const contentCanvas = this.selectedObject.contentCanvas
+        ? this.selectedObject.contentCanvas
+        : new Canvas();
       this.selectedObject.contentCanvas = contentCanvas;
       contentCanvas.parentNode = this.selectedObject;
       this.deinitCanvas();
